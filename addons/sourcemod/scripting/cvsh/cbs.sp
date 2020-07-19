@@ -64,8 +64,10 @@ static const char SoundRage[][] =
 	"vo/taunts/sniper_taunts16.wav"
 };
 
-void CBS_MapStart()
+void CBS_Precache(Function &func)
 {
+	func = CBS_Info;
+
 	PrecacheModel(BossModel, true);
 	PrecacheSound(BGMusic, true);
 	PrecacheSound(SoundIntro, true);
@@ -101,27 +103,33 @@ void CBS_MapStart()
 	LockStringTables(save);
 }
 
-void CBS_Setup(int client)
+public void CBS_Info(int client, char[] name, char[] desc, bool setup)
 {
-	strcopy(Hale[client].Name, sizeof(Hale[].Name), "Christian Brutal Sniper");
+	strcopy(name, 64, "Christian Brutal Sniper");
+	if(setup)
+	{
+		Hale[client].RoundIntro = CBS_Intro;
+		Hale[client].RoundStart = CBS_RoundStart;
 
-	Hale[client].RoundIntro = CBS_Intro;
-	Hale[client].RoundStart = CBS_RoundStart;
+		Hale[client].PlayerSpawn = CBS_Spawn;
+		Hale[client].PlayerVoice = CBS_OnVoice;
+		Hale[client].PlayerCommand = CBS_Think;
 
-	Hale[client].PlayerSpawn = CBS_Spawn;
-	Hale[client].PlayerVoice = CBS_OnVoice;
-	Hale[client].PlayerCommand = CBS_Think;
+		Hale[client].PlayerKill = CBS_Kill;
+		Hale[client].PlayerDeath = CBS_Death;
 
-	Hale[client].PlayerKill = CBS_Kill;
-	Hale[client].PlayerDeath = CBS_Death;
+		Hale[client].PlayerTakeDamage = Default_TakeDamage;
+		Hale[client].PlayerDealDamage = CBS_DealDamage;
 
-	Hale[client].PlayerTakeDamage = Default_TakeDamage;
-	Hale[client].PlayerDealDamage = CBS_DealDamage;
+		Hale[client].MiscTheme = CBS_Theme;
+		Hale[client].MiscDesc = CBS_Desc;
 
-	Hale[client].MiscTheme = CBS_Theme;
-	Hale[client].MiscDesc = CBS_Desc;
-
-	TF2_SetPlayerClass(client, BossClass);
+		TF2_SetPlayerClass(client, BossClass);
+	}
+	else
+	{
+		strcopy(desc, 512, "Christian Brutal Sniper\nBrave Jump: 5 sec cooldown, x1.1 height, x0.9 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\n \nRage: 2900 damage\nTimed Weapon: Up to 16 seconds\nSentry Stun: 5 seconds\n \nLoadouts: Primary & Melee\nThe Fishwhacker: Deals 100%% more damage\n ");
+	}
 }
 
 public void CBS_RoundStart(int client)
@@ -246,7 +254,6 @@ public Action CBS_DealDamage(int client, int victim, int &inflictor, float &dama
 	if(weapon<=MaxClients || !IsValidEntity(weapon) || !HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") || GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")!=3003)
 		return Plugin_Continue;
 
-	damagetype |= DMG_CRIT;
 	damage *= 2.0;
 	return Plugin_Changed;
 }
@@ -399,11 +406,7 @@ public void CBS_Theme(int client)
 	PrintToChat(client, "%sNow Playing: Combustible Edison - The Millionaire's Holiday", PREFIX);
 }
 
-public void CBS_Desc(int client)
+public void CBS_Desc(int client, char[] buffer)
 {
-	Menu menu = new Menu(EmptyMenuH);
-	menu.SetTitle("Christian Brutal Sniper\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nTimed Weapon: Call for a medic when rage is ready\nLoadout: Your loadout effects this boss\n ");
-	menu.ExitButton = false;
-	menu.AddItem("0", "Exit");
-	menu.Display(client, 25);
+	strcopy(buffer, 512, "Christian Brutal Sniper\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nTimed Weapon: Call for a medic when rage is ready\nLoadout: Your loadout effects this boss\n ");
 }

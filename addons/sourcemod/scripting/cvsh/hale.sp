@@ -211,8 +211,10 @@ static const char HaleStab[][] =
 	"saxton_hale/saxton_hale_132_stub_4.wav"
 };
 
-void Hale_MapStart()
+void Hale_Precache(Function &func)
 {
+	func = Hale_Info;
+
 	PrecacheModel(HALEMODEL, true);
 	PrecacheSound(HALEKILLSCOUT, true);
 	PrecacheSound(HALEKILLSOLDIER, true);
@@ -268,29 +270,35 @@ void Hale_MapStart()
 	LockStringTables(save);
 }
 
-void Hale_Setup(int client)
+public void Hale_Info(int client, char[] name, char[] desc, bool setup)
 {
-	strcopy(Hale[client].Name, sizeof(Hale[].Name), "Saxton Hale");
+	strcopy(name, 64, "Saxton Hale");
+	if(setup)
+	{
+		Hale[client].RoundIntro = Hale_Intro;
+		Hale[client].RoundStart = Hale_RoundStart;
+		Hale[client].RoundLastman = Hale_Lastman;
+		Hale[client].RoundWin = Hale_Win;
 
-	Hale[client].RoundIntro = Hale_Intro;
-	Hale[client].RoundStart = Hale_RoundStart;
-	Hale[client].RoundLastman = Hale_Lastman;
-	Hale[client].RoundWin = Hale_Win;
+		Hale[client].PlayerSpawn = Hale_Spawn;
+		Hale[client].PlayerSound = Default_Sound;
+		Hale[client].PlayerVoice = Hale_OnRage;
+		Hale[client].PlayerCommand = Hale_Think;
 
-	Hale[client].PlayerSpawn = Hale_Spawn;
-	Hale[client].PlayerSound = Default_Sound;
-	Hale[client].PlayerVoice = Hale_OnRage;
-	Hale[client].PlayerCommand = Hale_Think;
+		Hale[client].PlayerKill = Hale_Kill;
+		Hale[client].PlayerDeath = Hale_Death;
 
-	Hale[client].PlayerKill = Hale_Kill;
-	Hale[client].PlayerDeath = Hale_Death;
+		Hale[client].PlayerTakeDamage = Hale_TakeDamage;
 
-	Hale[client].PlayerTakeDamage = Hale_TakeDamage;
+		Hale[client].MiscDestory = Hale_Destory;
+		Hale[client].MiscDesc = Hale_Desc;
 
-	Hale[client].MiscDestory = Hale_Destory;
-	Hale[client].MiscDesc = Hale_Desc;
-
-	TF2_SetPlayerClass(client, HALEWEAPON);
+		TF2_SetPlayerClass(client, HALEWEAPON);
+	}
+	else
+	{
+		strcopy(desc, 512, "Saxton Hale\nBrave Jump: 6 sec cooldown, x1.0 height, x1.0 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\nAnchor: unlimited use\n \nRage: 2800 damage\nPlayer Stun: 5 seconds, x1.0 range\nSentry Stun: 7 seconds\n ");
+	}
 }
 
 public void Hale_RoundStart(int client)
@@ -653,8 +661,12 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 
 	if(attacker<1 || attacker>MaxClients)
 	{
-		Hale[client].JumpDuper = damage>300;
-		Hale[client].JumpReadyAt = 0.0;
+		static char classname[64];
+		if(GetEntityClassname(attacker, classname, sizeof(classname)) && StrEqual(classname, "trigger_hurt", false))
+		{
+			Hale[client].JumpDuper = true;
+			Hale[client].JumpReadyAt = 0.0;
+		}
 		return Plugin_Continue;
 	}
 
@@ -840,11 +852,7 @@ public void Hale_Win()
 	}
 }
 
-public void Hale_Desc(int client)
+public void Hale_Desc(int client, char[] buffer)
 {
-	Menu menu = new Menu(EmptyMenuH);
-	menu.SetTitle("Saxton Hale\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nAnchor: Hold DUCK on the ground\nStun: Call for a medic when rage is ready\n ");
-	menu.ExitButton = false;
-	menu.AddItem("0", "Exit");
-	menu.Display(client, 25);
+	strcopy(buffer, 512, "Saxton Hale\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nAnchor: Hold DUCK on the ground\nStun: Call for a medic when rage is ready\n ");
 }

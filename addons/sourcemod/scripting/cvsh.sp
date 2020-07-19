@@ -26,6 +26,8 @@ public Plugin myinfo =
 #define FAR_FUTURE	100000000.0
 #define PREFIX		"\x04[VSH]\x01 "
 
+#define MAXBOSSES	4
+
 #define CHARGE_BUTTON	IN_ATTACK2
 #define HUD_Y		0.88
 #define HUD_INTERVAL	0.2
@@ -58,8 +60,10 @@ static const int ClassLimit[] =
 enum struct ClientEnum
 {
 	int Damage;
-	int Queue;
 	int LastWeapon;
+
+	int Queue;
+	int Selection;
 
 	float HudAt;
 	float StunFor;
@@ -110,7 +114,7 @@ enum struct HaleEnum
 
 	Function MiscDestory;	// void(int client)
 	Function MiscTheme;	// void(int client)
-	Function MiscDesc;	// void(int client)
+	Function MiscDesc;	// void(int client, char[] buffer)
 }
 
 bool Enabled;
@@ -123,6 +127,7 @@ const int MercTeam = view_as<int>(TFTeam_Red);
 
 ClientEnum Client[MAXPLAYERS+1];
 HaleEnum Hale[MAXPLAYERS+1];
+Function Special[MAXBOSSES];	// void(int client, char[] name, char[] desc, Function &setup)
 
 Cookie Cookies;
 
@@ -206,6 +211,7 @@ public void OnPluginEnd()
 public void OnClientPostAdminCheck(int client)
 {
 	Client[client].ThemeAt = GetEngineTime()+2.0;
+	Client[client].Selection = 0;
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	if(!AreClientCookiesCached(client))
 	{
@@ -422,9 +428,20 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 			if(Hale[i].MiscDesc == INVALID_FUNCTION)
 				continue;
 
+			static char buffer[512];
 			Call_StartFunction(null, Hale[i].MiscDesc);
 			Call_PushCell(i);
+			Call_PushStringEx(buffer, sizeof(buffer), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 			Call_Finish();
+
+			if(!buffer[0])
+				continue;
+
+			Menu menu = new Menu(EmptyMenuH);
+			menu.SetTitle(buffer);
+			menu.ExitButton = false;
+			menu.AddItem("0", "Exit");
+			menu.Display(i, 25);
 		}
 		else if(GetClientTeam(i) != MercTeam)
 		{
@@ -792,14 +809,14 @@ public Action HookSound(int clients[MAXPLAYERS], int &numClients, char sound[PLA
 	Call_StartFunction(null, Hale[client].PlayerSound);
 	Call_PushArrayEx(clients, MAXPLAYERS, SM_PARAM_COPYBACK);
 	Call_PushCellRef(numClients);
-	Call_PushStringEx(sound, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8, SM_PARAM_COPYBACK);
+	Call_PushStringEx(sound, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCellRef(client);
 	Call_PushCellRef(channel);
 	Call_PushFloatRef(volume);
 	Call_PushCellRef(level);
 	Call_PushCellRef(pitch);
 	Call_PushCellRef(flags);
-	Call_PushStringEx(soundEntry, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8, SM_PARAM_COPYBACK);
+	Call_PushStringEx(soundEntry, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCellRef(seed);
 
 	Action action;
@@ -1035,6 +1052,11 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 public Action OnRoundPre(Handle timer)
 {
+	TF2_OnWaitingForPlayersEnd();
+}
+
+public void TF2_OnWaitingForPlayersEnd()
+{
 	for(int i; i<=MAXPLAYERS; i++)
 	{
 		Hale[i].Enabled = false;
@@ -1062,9 +1084,10 @@ public Action OnRoundPre(Handle timer)
 	if(!hale)
 	{
 		Enabled = false;
-		return Plugin_Continue;
+		return;
 	}
 
+	Enabled = true;
 	LeaderHale = hale;
 	SetupHale(hale);
 	Hale[hale].Enabled = true;
@@ -1122,7 +1145,6 @@ public Action OnRoundPre(Handle timer)
 	{
 		Client[i].Damage = 0;
 	}
-	return Plugin_Continue;
 }
 
 public void CheckAlivePlayers()
@@ -1270,53 +1292,67 @@ stock TFClassType GetClassFromName(const char[] classname)
 
 public void OnMapStart()
 {
-	Hale_MapStart();
+	for(int i; i<MAXBOSSES; i++)
+	{
+		Special[i] = INVALID_FUNCTION;
+	}
+
+	Hale_Precache(Special[0]);
 
 	#if defined BOSS_VAG
-	Vag_MapStart();
+	Vag_Precache(Special[1]);
 	#endif
 
 	#if defined BOSS_CBS
-	CBS_MapStart();
+	CBS_Precache(Special[2]);
 	#endif
 }
 
-void SetupHale(int i)
+void SetupHale(int client)
 {
-	Hale[i].RoundIntro = INVALID_FUNCTION;
-	Hale[i].RoundStart = INVALID_FUNCTION;
-	Hale[i].RoundLastman = INVALID_FUNCTION;
-	Hale[i].RoundEnd = INVALID_FUNCTION;
-	Hale[i].RoundWin = INVALID_FUNCTION;
+	Hale[client].RoundIntro = INVALID_FUNCTION;
+	Hale[client].RoundStart = INVALID_FUNCTION;
+	Hale[client].RoundLastman = INVALID_FUNCTION;
+	Hale[client].RoundEnd = INVALID_FUNCTION;
+	Hale[client].RoundWin = INVALID_FUNCTION;
 
-	Hale[i].PlayerSpawn = INVALID_FUNCTION;
-	Hale[i].PlayerSound = INVALID_FUNCTION;
-	Hale[i].PlayerVoice = INVALID_FUNCTION;
-	Hale[i].PlayerCommand = INVALID_FUNCTION;
+	Hale[client].PlayerSpawn = INVALID_FUNCTION;
+	Hale[client].PlayerSound = INVALID_FUNCTION;
+	Hale[client].PlayerVoice = INVALID_FUNCTION;
+	Hale[client].PlayerCommand = INVALID_FUNCTION;
 
-	Hale[i].PlayerKill = INVALID_FUNCTION;
-	Hale[i].PlayerDeath = INVALID_FUNCTION;
+	Hale[client].PlayerKill = INVALID_FUNCTION;
+	Hale[client].PlayerDeath = INVALID_FUNCTION;
 
-	Hale[i].PlayerTakeDamage = INVALID_FUNCTION;
-	Hale[i].PlayerDealDamage = INVALID_FUNCTION;
+	Hale[client].PlayerTakeDamage = INVALID_FUNCTION;
+	Hale[client].PlayerDealDamage = INVALID_FUNCTION;
 
-	Hale[i].MiscDestory = INVALID_FUNCTION;
-	Hale[i].MiscTheme = INVALID_FUNCTION;
-	Hale[i].MiscDesc = INVALID_FUNCTION;
+	Hale[client].MiscDestory = INVALID_FUNCTION;
+	Hale[client].MiscTheme = INVALID_FUNCTION;
+	Hale[client].MiscDesc = INVALID_FUNCTION;
 
-	switch(GetRandomInt(0, 14))
+	int selection = Client[client].Selection;
+	if(selection<0 || selection>=MAXBOSSES || Special[selection]==INVALID_FUNCTION)
 	{
-		#if defined BOSS_VAG
-		case 1:
-			Vag_Setup(i);
-		#endif
+		int amount;
+		int special[MAXBOSSES];
+		for(int i; i<MAXBOSSES; i++)
+		{
+			if(Special[i] != INVALID_FUNCTION)
+				special[amount++] = i;
+		}
 
-		#if defined BOSS_CBS
-		case 2:
-			CBS_Setup(i);
-		#endif
+		if(!selection)
+			SetFailState("Found no valid bosses");
 
-		default:
-			Hale_Setup(i);
+		selection = special[GetRandomInt(0, amount-1)];
 	}
+
+	char desc[2];
+	Call_StartFunction(null, Special[selection]);
+	Call_PushCell(client);
+	Call_PushStringEx(Hale[client].Name, sizeof(Hale[].Name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(true);
+	Call_Finish();
 }

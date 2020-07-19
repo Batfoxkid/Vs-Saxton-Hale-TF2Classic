@@ -1,6 +1,6 @@
 #define MODULE_MENU
 
-static void Changelog(int &page, char[] buffer, int length)
+/*static void Changelog(int &page, char[] buffer, int length)
 {
 	switch(page)
 	{
@@ -16,25 +16,29 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once");
 		}
-		case 2:
+		case 3:
 		{
 			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700");
 		}
-		case 3:
+		case 4:
 		{
 			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\nFlaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper");
 		}
-		case 4:
+		case 5:
 		{
 			strcopy(buffer, length, "Changelog: 1.2.0 New Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info");
 		}
+		case 6:
+		{
+			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Added boss selection\n- Fixed Gunboats not giving fall damage resistance\n- Removed first arena round");
+		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Fixed Gunboats not giving fall damage resistance");
-			page = 5;
+			strcopy(buffer, length, "Changelog: 1.2.2\n \n- ");
+			page = 6;
 		}
 	}
-}
+}*/
 
 void Menu_PluginStart()
 {
@@ -55,6 +59,13 @@ void Menu_PluginStart()
 	RegConsoleCmd("ff2classinfo", Menu_InfoC, "View changes to your class");
 	RegConsoleCmd("vsh_classinfo", Menu_InfoC, "View changes to your class");
 	RegConsoleCmd("vshclassinfo", Menu_InfoC, "View changes to your class");
+
+	RegConsoleCmd("hale_boss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("haleboss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("ff2_boss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("ff2boss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("vsh_boss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("vshboss", Menu_SelectC, "Select your boss");
 }
 
 /*
@@ -81,7 +92,7 @@ static void Menu_Main(int client)
 	menu.SetTitle("Versus Saxton Hale / Freak Fortress 2\n ");
 	menu.AddItem("1", "Queue Points");
 	menu.AddItem("2", "Class Changes");
-	menu.AddItem("3", "Boss Selection", ITEMDRAW_DISABLED);
+	menu.AddItem("3", "Boss Selection");
 	menu.AddItem("4", "User Settings", ITEMDRAW_DISABLED);
 	menu.AddItem("5", "Hud Settings", ITEMDRAW_DISABLED);
 	menu.AddItem("6", "Changelog", ITEMDRAW_DISABLED);
@@ -107,6 +118,9 @@ public int Menu_MainH(Menu menu, MenuAction action, int client, int selection)
 
 				case 1:
 					Menu_Info(client, true);
+
+				case 2:
+					Menu_Select(client, true);
 
 				default:
 					ClientCommand(client, "sm_helpme");
@@ -218,25 +232,38 @@ public int Menu_QueueH(Menu menu, MenuAction action, int client, int selection)
 
 public Action Menu_InfoC(int client, int args)
 {
-	if(!client)
+	if(client)
 	{
-		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
-	}
-	else if(Hale[client].Enabled && Hale[client].MiscDesc!=INVALID_FUNCTION)
-	{
-		Call_StartFunction(null, Hale[client].MiscDesc);
-		Call_PushCell(client);
-		Call_Finish();
+		Menu_Info(client);
 	}
 	else
 	{
-		Menu_Info(client);
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
 	}
 	return Plugin_Handled;
 }
 
 static void Menu_Info(int client, bool back=false)
 {
+	if(Hale[client].Enabled && Hale[client].MiscDesc!=INVALID_FUNCTION)
+	{
+		static char buffer[512];
+		Call_StartFunction(null, Hale[client].MiscDesc);
+		Call_PushCell(client);
+		Call_PushStringEx(buffer, sizeof(buffer), SM_PARAM_STRING_UTF8, SM_PARAM_COPYBACK);
+		Call_Finish();
+
+		if(buffer[0])
+		{
+			Menu menu = new Menu(EmptyMenuH);
+			menu.SetTitle(buffer);
+			menu.ExitButton = false;
+			menu.AddItem("0", "Exit");
+			menu.Display(client, MENU_TIME_FOREVER);
+			return;
+		}
+	}
+
 	Menu menu = new Menu(Menu_InfoH);
 
 	menu.SetTitle("Class Changes\n ");
@@ -346,6 +373,162 @@ public int Menu_InfoClassH(Menu menu, MenuAction action, int client, int selecti
 			int value = StringToInt(buffer);
 			if(value)
 				Menu_Info(client, value==2);
+		}
+	}
+}
+
+/*
+	Boss Selection
+*/
+
+public Action Menu_SelectC(int client, int args)
+{
+	if(client)
+	{
+		Menu_Select(client);
+	}
+	else
+	{
+		char desc[4];
+		for(int i; i<MAXBOSSES; i++)
+		{
+			if(Special[i] == INVALID_FUNCTION)
+				continue;
+
+			static char name[64];
+			Call_StartFunction(null, Special[i]);
+			Call_PushCell(client);
+			Call_PushStringEx(name, sizeof(name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushCell(false);
+			Call_Finish();
+
+			ReplyToCommand(client, name);
+		}
+	}
+	return Plugin_Handled;
+}
+
+static void Menu_Select(int client, bool back=false)
+{
+	Menu menu = new Menu(Menu_SelectH);
+
+	char desc[4];
+	static char name[64];
+	int i = Client[client].Selection;
+	if(i<0 || i>=MAXBOSSES || Special[i]==INVALID_FUNCTION)
+	{
+		menu.SetTitle("Boss Selection\n \nSelection: Random Boss");
+		menu.AddItem("-1", "Random Boss", ITEMDRAW_DISABLED);
+	}
+	else
+	{
+		Call_StartFunction(null, Special[i]);
+		Call_PushCell(client);
+		Call_PushStringEx(name, sizeof(name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushCell(false);
+		Call_Finish();
+
+		menu.SetTitle("Boss Selection\n \nSelection: %s", name);
+		menu.AddItem("-1", "Random Boss");
+	}
+
+	for(i=0; i<MAXBOSSES; i++)
+	{
+		if(Special[i] == INVALID_FUNCTION)
+			continue;
+
+		Call_StartFunction(null, Special[i]);
+		Call_PushCell(client);
+		Call_PushStringEx(name, sizeof(name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushCell(false);
+		Call_Finish();
+
+		IntToString(i, desc, sizeof(desc));
+		menu.AddItem(desc, name);
+	}
+
+	menu.ExitBackButton = back;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_SelectH(Menu menu, MenuAction action, int client, int selection)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(selection == MenuCancel_ExitBack)
+				Menu_Main(client);
+		}
+		case MenuAction_Select:
+		{
+			if(!selection)
+			{
+				Client[client].Selection = -1;
+				Menu_Select(client, menu.ExitBackButton);
+				return;
+			}
+
+			char buffer[4];
+			menu.GetItem(selection, buffer, sizeof(buffer));
+			Menu_Confirm(client, StringToInt(buffer), menu.ExitBackButton);
+		}
+	}
+}
+
+static void Menu_Confirm(int client, int i, bool back)
+{
+	if(i<0 || i>=MAXBOSSES || Special[i]==INVALID_FUNCTION)
+	{
+		Menu_Select(client, back);
+		return;
+	}
+
+	char name[4];
+	static char desc[512];
+	Call_StartFunction(null, Special[i]);
+	Call_PushCell(client);
+	Call_PushStringEx(name, sizeof(name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(false);
+	Call_Finish();
+
+	Menu menu = new Menu(Menu_ConfirmH);
+	menu.SetTitle(desc);
+
+	IntToString(i, name, sizeof(name));
+	menu.AddItem(name, "Select");
+	menu.AddItem(name, "Back");
+
+	menu.ExitButton = !back;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_ConfirmH(Menu menu, MenuAction action, int client, int selection)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			if(!selection)
+			{
+				char buffer[4];
+				menu.GetItem(0, buffer, sizeof(buffer));
+				Client[client].Selection = StringToInt(buffer);
+			}
+
+			Menu_Select(client, !menu.ExitButton);
 		}
 	}
 }

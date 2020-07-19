@@ -219,8 +219,12 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 
 	if(attacker<1 || attacker>MaxClients)
 	{
-		Hale[client].JumpDuper = damage>300;
-		Hale[client].JumpReadyAt = 0.0;
+		static char classname[64];
+		if(GetEntityClassname(attacker, classname, sizeof(classname)) && StrEqual(classname, "trigger_hurt", false))
+		{
+			Hale[client].JumpDuper = true;
+			Hale[client].JumpReadyAt = 0.0;
+		}
 		return Plugin_Continue;
 	}
 
@@ -370,11 +374,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 	return Plugin_Continue;
 }
 
-public void Default_Desc(int client)
+public void Default_Desc(int client, char[] buffer)
 {
-	Menu menu = new Menu(EmptyMenuH);
-	menu.SetTitle("%s\n \nNo boss description\n ", Hale[client].Name);
-	menu.ExitButton = false;
-	menu.AddItem("0", "Exit");
-	menu.Display(client, 15);
+	Format(buffer, 512, "%s\n \nNo boss description\n ", Hale[client].Name);
 }

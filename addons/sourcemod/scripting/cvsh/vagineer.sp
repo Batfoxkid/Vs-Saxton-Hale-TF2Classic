@@ -73,8 +73,10 @@ static const char VagKspree[][] =
 #define VAGKILL		"saxton_hale/lolwut_5.wav"
 #define VAGCATCH	"vo/engineer_jeers02.wav"
 
-void Vag_MapStart()
+void Vag_Precache(Function &func)
 {
+	func = Vag_Info;
+
 	PrecacheModel(VAGMODEL, true);
 	PrecacheSound(VAGKILL, true);
 
@@ -103,28 +105,34 @@ void Vag_MapStart()
 	LockStringTables(save);
 }
 
-void Vag_Setup(int client)
+public void Vag_Info(int client, char[] name, char[] desc, bool setup)
 {
-	strcopy(Hale[client].Name, sizeof(Hale[].Name), "Vagineer");
+	strcopy(name, 64, "Vagineer");
+	if(setup)
+	{
+		Hale[client].RoundIntro = Vag_Intro;
+		Hale[client].RoundStart = Vag_RoundStart;
+		Hale[client].RoundLastman = Vag_Lastman;
+		Hale[client].RoundWin = Vag_Win;
 
-	Hale[client].RoundIntro = Vag_Intro;
-	Hale[client].RoundStart = Vag_RoundStart;
-	Hale[client].RoundLastman = Vag_Lastman;
-	Hale[client].RoundWin = Vag_Win;
+		Hale[client].PlayerSpawn = Vag_Spawn;
+		Hale[client].PlayerSound = Vag_Sound;
+		Hale[client].PlayerVoice = Vag_OnRage;
+		Hale[client].PlayerCommand = Vag_Think;
 
-	Hale[client].PlayerSpawn = Vag_Spawn;
-	Hale[client].PlayerSound = Vag_Sound;
-	Hale[client].PlayerVoice = Vag_OnRage;
-	Hale[client].PlayerCommand = Vag_Think;
+		Hale[client].PlayerKill = Vag_Kill;
+		Hale[client].PlayerDeath = Vag_Death;
 
-	Hale[client].PlayerKill = Vag_Kill;
-	Hale[client].PlayerDeath = Vag_Death;
+		Hale[client].PlayerTakeDamage = Default_TakeDamage;
 
-	Hale[client].PlayerTakeDamage = Default_TakeDamage;
+		Hale[client].MiscDesc = Vag_Desc;
 
-	Hale[client].MiscDesc = Vag_Desc;
-
-	TF2_SetPlayerClass(client, VAGCLASS);
+		TF2_SetPlayerClass(client, VAGCLASS);
+	}
+	else
+	{
+		strcopy(desc, 512, "Vagineer\nBrave Jump: 6 sec cooldown, x0.9 height, x1.1 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\n \nRage: 2700 damage\nUbercharge: 10 seconds\nSentry Stun: 10 seconds\n ");
+	}
 }
 
 public void Vag_RoundStart(int client)
@@ -427,11 +435,7 @@ public Action Vag_DissolveRagdoll(Handle timer, any userid)
 	return Plugin_Continue;
 }
 
-public void Vag_Desc(int client)
+public void Vag_Desc(int client, char[] buffer)
 {
-	Menu menu = new Menu(EmptyMenuH);
-	menu.SetTitle("Vagineer\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nUbercharge: Call for a medic when rage is ready\n ");
-	menu.ExitButton = false;
-	menu.AddItem("0", "Exit");
-	menu.Display(client, 25);
+	strcopy(buffer, 512, "Vagineer\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nUbercharge: Call for a medic when rage is ready\n ");
 }
