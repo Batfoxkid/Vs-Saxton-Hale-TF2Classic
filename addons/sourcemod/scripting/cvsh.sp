@@ -11,7 +11,7 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"0"
+#define MINOR_REVISION	"1"
 #define STABLE_REVISION	"0"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
@@ -63,6 +63,9 @@ enum struct ClientEnum
 
 	float HudAt;
 	float StunFor;
+
+	char Theme[PLATFORM_MAX_PATH];
+	float ThemeAt;
 }
 
 enum struct HaleEnum
@@ -73,7 +76,7 @@ enum struct HaleEnum
 	int Health;
 
 	int Rage;
-	float RagingFor;
+	float RageFor;
 
 	bool SpreeNext;
 	float SpreeFor;
@@ -105,6 +108,7 @@ enum struct HaleEnum
 	Function PlayerDealDamage;	// Action(int client, int victim, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 
 	Function MiscDestory;	// void(int client)
+	Function MiscTheme;	// void(int client)
 }
 
 bool Enabled;
@@ -129,7 +133,9 @@ Handle MainHud;
 
 public void OnPluginStart()
 {
-	RegAdminCmd("sm_stun", Command_Stun, ADMFLAG_RCON, "Usage: sm_stun <target>.");
+	RegAdminCmd("sm_stun", Command_Stun, ADMFLAG_RCON, "Usage: sm_stun <target>");
+
+	RegAdminCmd("ff2_addpoints", Command_AddPoints, ADMFLAG_CHEATS, "Usage: ff2_addpoints <target> [amount]");
 
 	HookEvent("player_spawn", OnPlayerSpawn);
 	//HookEvent("player_changeclass", OnPlayerChangeClass);
@@ -191,6 +197,7 @@ public void OnPluginEnd()
 
 public void OnClientPostAdminCheck(int client)
 {
+	Client[client].ThemeAt = GetEngineTime()+2.0;
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	if(!AreClientCookiesCached(client))
 	{
@@ -230,6 +237,43 @@ public Action Command_Stun(int client, int args)
 
 		Client[targets[target]].LastWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 		Client[targets[target]].StunFor = engineTime;
+	}
+	return Plugin_Handled;
+}
+
+public Action Command_AddPoints(int client, int args)
+{
+	if(args!=1 && args!=2)
+	{
+		ReplyToCommand(client, "[SM] Usage: ff2_addpoints <target> [amount]");
+		return Plugin_Handled;
+	}
+
+	char pattern[PLATFORM_MAX_PATH], targetName[MAX_TARGET_LENGTH];
+	int targets[MAXPLAYERS], matches;
+	bool targetNounIsMultiLanguage;
+
+	GetCmdArg(1, pattern, sizeof(pattern));
+	if((matches=ProcessTargetString(pattern, client, targets, sizeof(targets), COMMAND_FILTER_NO_IMMUNITY, targetName, sizeof(targetName), targetNounIsMultiLanguage)) < 1)
+	{
+		ReplyToTargetError(client, matches);
+		return Plugin_Handled;
+	}
+
+	GetCmdArg(2, pattern, sizeof(pattern));
+	int queue = StringToInt(pattern);
+	for(int target; target<matches; target++)
+	{
+		if(IsClientSourceTV(targets[target]) || IsClientReplay(targets[target]))
+			continue;
+
+		if(args == 1)
+		{
+			ReplyToCommand(client, "[SM] %N has %d queue points", targets[target], Client[targets[target]].Queue);
+			continue;
+		}
+
+		Client[targets[target]].Queue = queue;
 	}
 	return Plugin_Handled;
 }
@@ -336,7 +380,7 @@ public Action OnJoinClass(int client, const char[] command, int args)
 
 public Action BlockHaleCommand(int client, const char[] command, int args)
 {
-	return Hale[client].Enabled ? Plugin_Handled : Plugin_Continue;
+	return (Hale[client].Enabled && RoundMode!=2) ? Plugin_Handled : Plugin_Continue;
 }
 
 public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
@@ -392,14 +436,21 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	if(!Enabled)
 		return;
 
-	float engineTime = GetEngineTime()+10.5;
+	float engineTime = GetEngineTime();
 
 	int clients;
 	int[] client = new int[MaxClients];
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i) || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
+		if(!IsClientInGame(i))
 			continue;
+
+		Client[i].ThemeAt = engineTime+1.5;
+		if(GetClientTeam(i) <= view_as<int>(TFTeam_Spectator))
+		{
+			Client[i].HudAt = engineTime+10.5;
+			continue;
+		}
 
 		client[clients++] = i;
 		if(Hale[i].Enabled)
@@ -417,7 +468,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 		}
 		else if(GetClientTeam(i) != MercTeam)
 		{
-			Client[i].HudAt = engineTime;
+			Client[i].HudAt = engineTime+10.5;
 			ChangeClientTeam(i, MercTeam);
 		}
 	}
@@ -454,6 +505,14 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			if(!IsClientInGame(i))
 				continue;
 
+			if(Client[i].Theme[0])
+			{
+				StopSound(i, SNDCHAN_STATIC, Client[i].Theme);
+				Client[i].Theme[0] = 0;
+				Client[i].ThemeAt = FAR_FUTURE;
+			}
+
+			client[clients++] = i;
 			if(Hale[i].Enabled)
 			{
 				if(Hale[i].RoundEnd != INVALID_FUNCTION)
@@ -465,7 +524,6 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				continue;
 			}
 
-			client[clients++] = i;
 			if(Client[i].Damage < 1)
 				continue;
 
@@ -714,6 +772,12 @@ public Action HookSound(int clients[MAXPLAYERS], int &numClients, char sound[PLA
 	return action;
 }
 
+/*public void OnEntityCreated(int entity, const char[] classname)
+{
+	if(StrContains(classname, "item_healthkit")!=-1 || StrContains(classname, "item_ammopack")!=-1 || StrEqual(classname, "tf_ammo_pack"))
+		SDKHook(entity, SDKHook_Spawn, OnItemSpawned);
+}*/
+
 public void TF2_OnConditionRemoved(int client, TFCond cond)
 {
 	if(cond == TFCond_Taunting)
@@ -724,6 +788,32 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if(!Enabled || RoundMode!=1)
 		return Plugin_Continue;
+
+	float engineTime = GetEngineTime();
+	if(Client[client].ThemeAt < engineTime)
+	{
+		if(Hale[LeaderHale].MiscTheme == INVALID_FUNCTION)
+		{
+			Client[client].ThemeAt = FAR_FUTURE;
+		}
+		else
+		{
+			Call_StartFunction(null, Hale[LeaderHale].MiscTheme);
+			Call_PushCell(client);
+			Call_Finish();
+			if(!Client[client].Theme[0])
+			{
+				Client[client].ThemeAt = FAR_FUTURE;
+			}
+			else
+			{
+				if(Client[client].ThemeAt < engineTime)
+					Client[client].ThemeAt = FAR_FUTURE;
+
+				EmitSoundToClient(client, Client[client].Theme, _, SNDCHAN_STATIC);
+			}
+		}
+	}
 
 	if(Hale[client].Enabled && Hale[client].PlayerCommand!=INVALID_FUNCTION)
 	{
@@ -736,7 +826,6 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		return action;
 	}
 
-	float engineTime = GetEngineTime();
 	bool alive = IsPlayerAlive(client);
 	if(Client[client].StunFor)
 	{
@@ -1046,6 +1135,20 @@ public void CheckAlivePlayers()
 	Call_Finish();
 }
 
+/*public void OnItemSpawned(int entity)
+{
+	SDKHook(entity, SDKHook_StartTouch, OnPickup);
+	SDKHook(entity, SDKHook_Touch, OnPickup);
+}
+
+public Action OnPickup(int entity, int client)
+{
+	if(Enabled && client>0 && client<=MaxClients && Hale[client].Enabled)
+		return Plugin_Handled;
+
+	return Plugin_Continue;
+}*/
+
 stock void SetControlPoint(bool enable)
 {
 	int controlPoint = MaxClients+1;
@@ -1128,14 +1231,19 @@ stock TFClassType GetClassFromName(const char[] classname)
 #include "cvsh/default.sp"
 #include "cvsh/hale.sp"
 #tryinclude "cvsh/vagineer.sp"
+#tryinclude "cvsh/cbs.sp"
 
 public void OnMapStart()
 {
+	Hale_MapStart();
+
 	#if defined BOSS_VAG
 	Vag_MapStart();
 	#endif
 
-	Hale_MapStart();
+	#if defined BOSS_CBS
+	CBS_MapStart();
+	#endif
 }
 
 void SetupHale(int i)
@@ -1158,12 +1266,18 @@ void SetupHale(int i)
 	Hale[i].PlayerDealDamage = INVALID_FUNCTION;
 
 	Hale[i].MiscDestory = INVALID_FUNCTION;
+	Hale[i].MiscTheme = INVALID_FUNCTION;
 
 	switch(GetRandomInt(0, 14))
 	{
 		#if defined BOSS_VAG
 		case 1:
 			Vag_Setup(i);
+		#endif
+
+		#if defined BOSS_CBS
+		case 2:
+			CBS_Setup(i);
 		#endif
 
 		default:

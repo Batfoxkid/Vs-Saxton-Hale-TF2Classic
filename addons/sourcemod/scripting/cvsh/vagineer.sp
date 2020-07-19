@@ -2,7 +2,7 @@
 
 #define VAGMODEL	"models/player/saxton_hale/vagineer_v151.mdl"
 #define VAGCLASS	TFClass_Engineer
-#define VAGRAGEDAMAGE	2800
+#define VAGRAGEDAMAGE	2700
 
 static const char VagDownload[][] =
 {
@@ -143,6 +143,7 @@ public Action Vag_OnRage(int client)
 		return Plugin_Continue;
 
 	Hale[client].Rage = 0;
+	Hale[client].RageFor = GetEngineTime()+10.0;
 	TF2_AddCondition(client, TFCond_Ubercharged, 10.0);
 
 	static float position[3];
@@ -195,6 +196,9 @@ public void Vag_Kill(int attacker, int client)
 	EmitSoundToAll(VAGKILL, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
 	EmitSoundToAll(VAGKILL, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
 	CreateTimer(0.1, Vag_DissolveRagdoll, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+
+	if(AlivePlayers < 3)
+		return;
 
 	float engineTime = GetEngineTime();
 	if(Hale[attacker].SpreeFor < engineTime)

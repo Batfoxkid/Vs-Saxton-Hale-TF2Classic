@@ -315,7 +315,7 @@ public Action Hale_OnRage(int client)
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 	float engineTime = GetEngineTime()+5.0;
-	Hale[client].RagingFor = engineTime+2.0;
+	Hale[client].RageFor = engineTime+2.0;
 
 	int team = GetClientTeam(client);
 	bool friendlyFire = GetConVarBool(FindConVar("mp_friendlyfire"));
@@ -776,7 +776,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 			}
 		}
 	}
-	else if(Hale[client].RagingFor > GetEngineTime())
+	else if(Hale[client].RageFor > GetEngineTime())
 	{
 		return Plugin_Handled;
 	}

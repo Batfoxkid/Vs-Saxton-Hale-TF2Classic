@@ -23,7 +23,7 @@ public Action Default_OnVoice(int client)
 	static float position[3];
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
-	Hale[client].RagingFor = GetEngineTime()+5.0;
+	Hale[client].RageFor = GetEngineTime()+5.0;
 
 	int team = GetClientTeam(client);
 	bool friendlyFire = GetConVarBool(FindConVar("mp_friendlyfire"));
@@ -41,7 +41,7 @@ public Action Default_OnVoice(int client)
 			continue;
 
 		Client[target].LastWeapon = GetEntPropEnt(target, Prop_Send, "m_hActiveWeapon");
-		Client[target].StunFor = Hale[client].RagingFor;
+		Client[target].StunFor = Hale[client].RageFor;
 	}
 
 	/*int sentry;
@@ -328,7 +328,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 			}
 		}
 	}
-	else if(Hale[client].RagingFor > GetEngineTime())
+	else if(Hale[client].RageFor > GetEngineTime())
 	{
 		return Plugin_Handled;
 	}
