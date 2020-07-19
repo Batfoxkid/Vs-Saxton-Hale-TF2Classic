@@ -288,6 +288,7 @@ void Hale_Setup(int client)
 	Hale[client].PlayerTakeDamage = Hale_TakeDamage;
 
 	Hale[client].MiscDestory = Hale_Destory;
+	Hale[client].MiscDesc = Hale_Desc;
 
 	TF2_SetPlayerClass(client, HALEWEAPON);
 }
@@ -506,15 +507,6 @@ public Action Hale_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	if(AlivePlayers == 1)
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
-	}
-	else
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
-	}
-
 	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 
@@ -709,6 +701,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 	if(changed)
 		damagetype |= DMG_PREVENT_PHYSICS_FORCE;
 
+	float engineTime = GetEngineTime();
 	if(weapon>MaxClients && IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
 	{
 		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
@@ -722,7 +715,25 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 					changed = true;
 				}
 			}
-			case 14, 16, 3002:	// Sniper Rifles, SMG
+			case 14:	// Sniper Rifle
+			{
+				if(!(damagetype & DMG_CRIT))
+				{
+					damage *= 2.0;
+					changed = true;
+					if(Client[client].GlowFor < engineTime)
+					{
+						Client[client].GlowFor = engineTime+6.0;
+					}
+					else if(Client[client].GlowFor != FAR_FUTURE)
+					{
+						Client[client].GlowFor += 5.0;
+						if(Client[client].GlowFor > engineTime+20.0)
+							Client[client].GlowFor = engineTime+20.0;
+					}
+				}
+			}
+			case 16:	// SMG
 			{
 				if(!(damagetype & DMG_CRIT))
 				{
@@ -742,7 +753,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 				if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
 					SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
 			}
-			case 21, 39:	// Flamethrower, Flaregun
+			case 21:	// Flamethrower
 			{
 				if(!(damagetype & DMG_CRIT) && damage>5)
 				{
@@ -758,12 +769,38 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 					changed = true;
 				}
 			}
+			case 39:	// Flaregun
+			{
+				if(damage > 5)
+				{
+					damage *= 2.0;
+					changed = true;
+				}
+			}
 			case 56:	// Huntsman
 			{
 				if(!(damagetype & DMG_CRIT))
 				{
 					damage *= 2.0;
 					changed = true;
+				}
+			}
+			case 3002:	// Hunting Revolver
+			{
+				if(!(damagetype & DMG_CRIT))
+				{
+					damage *= 2.0;
+					changed = true;
+					if(Client[client].GlowFor < engineTime)
+					{
+						Client[client].GlowFor = engineTime+3.0;
+					}
+					else if(Client[client].GlowFor != FAR_FUTURE)
+					{
+						Client[client].GlowFor += 2.5;
+						if(Client[client].GlowFor > engineTime+20.0)
+							Client[client].GlowFor = engineTime+20.0;
+					}
 				}
 			}
 			case 3003:	// Fishwhacker
@@ -776,7 +813,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 			}
 		}
 	}
-	else if(Hale[client].RageFor > GetEngineTime())
+	else if(Hale[client].RageFor > engineTime)
 	{
 		return Plugin_Handled;
 	}
@@ -801,4 +838,13 @@ public void Hale_Win()
 		if(IsClientInGame(i))
 			ClientCommand(i, "playgamesound \"%s\"", HaleWin[sound]);
 	}
+}
+
+public void Hale_Desc(int client)
+{
+	Menu menu = new Menu(EmptyMenuH);
+	menu.SetTitle("Saxton Hale\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nAnchor: Hold DUCK on the ground\nStun: Call for a medic when rage is ready\n ");
+	menu.ExitButton = false;
+	menu.AddItem("0", "Exit");
+	menu.Display(client, 25);
 }

@@ -119,6 +119,7 @@ void CBS_Setup(int client)
 	Hale[client].PlayerDealDamage = CBS_DealDamage;
 
 	Hale[client].MiscTheme = CBS_Theme;
+	Hale[client].MiscDesc = CBS_Desc;
 
 	TF2_SetPlayerClass(client, BossClass);
 }
@@ -255,15 +256,6 @@ public Action CBS_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	if(AlivePlayers == 1)
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
-	}
-	else
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
-	}
-
 	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 350.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
@@ -287,7 +279,7 @@ public Action CBS_Think(int client, int &buttons)
 				{
 					// unlike the original, I'm managing cooldown myself. so lets do it.
 					// also doing it now to completely avoid that rare double SJ glitch I've seen
-					Hale[client].JumpReadyAt = engineTime+6.0;
+					Hale[client].JumpReadyAt = engineTime+5.0;
 					Hale[client].WeighReadyAt = engineTime+3.0;
 
 					// taken from default_abilities, modified only lightly
@@ -392,11 +384,11 @@ public Action CBS_Think(int client, int &buttons)
 		}
 	}
 
-	/*if(buttons & IN_ATTACK2)
+	if(buttons & IN_ATTACK2)
 	{
 		buttons &= ~IN_ATTACK2;
 		return Plugin_Changed;
-	}*/
+	}
 	return Plugin_Continue;
 }
 
@@ -405,4 +397,13 @@ public void CBS_Theme(int client)
 	strcopy(Client[client].Theme, sizeof(Client[].Theme), BGMusic);
 	Client[client].ThemeAt = GetEngineTime()+131.0;
 	PrintToChat(client, "%sNow Playing: Combustible Edison - The Millionaire's Holiday", PREFIX);
+}
+
+public void CBS_Desc(int client)
+{
+	Menu menu = new Menu(EmptyMenuH);
+	menu.SetTitle("Christian Brutal Sniper\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nTimed Weapon: Call for a medic when rage is ready\nLoadout: Your loadout effects this boss\n ");
+	menu.ExitButton = false;
+	menu.AddItem("0", "Exit");
+	menu.Display(client, 25);
 }

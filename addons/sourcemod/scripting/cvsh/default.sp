@@ -93,15 +93,6 @@ public Action Default_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	if(AlivePlayers == 1)
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
-	}
-	else
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
-	}
-
 	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 340.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
@@ -260,7 +251,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 		return Plugin_Changed;
 	}
 
-	bool changed;
+	float engineTime = GetEngineTime();
 	if(weapon>MaxClients && IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
 	{
 		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
@@ -271,35 +262,53 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 				if(!(damagetype & DMG_CRIT))
 				{
 					damage *= 1.35;
-					changed = true;
+					return Plugin_Changed;
 				}
 			}
-			case 14, 16, 3002:	// Sniper Rifles, SMG
+			case 14:	// Sniper Rifle
+			{
+				if(!(damagetype & DMG_CRIT))
+				{
+					if(Client[client].GlowFor < engineTime)
+					{
+						Client[client].GlowFor = engineTime+6.0;
+					}
+					else if(Client[client].GlowFor != FAR_FUTURE)
+					{
+						Client[client].GlowFor += 5.0;
+						if(Client[client].GlowFor > engineTime+20.0)
+							Client[client].GlowFor = engineTime+20.0;
+					}
+					damage *= 2.0;
+					return Plugin_Changed;
+				}
+			}
+			case 16:	// SMG
 			{
 				if(!(damagetype & DMG_CRIT))
 				{
 					damage *= 2.0;
-					changed = true;
+					return Plugin_Changed;
 				}
 			}
 			case 17:	// Syringe Gun
 			{
-				if(!(damagetype & DMG_CRIT))
-				{
-					damage *= 1.35;
-					changed = true;
-				}
-
 				int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
 				if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
 					SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
+
+				if(!(damagetype & DMG_CRIT))
+				{
+					damage *= 1.35;
+					return Plugin_Changed;
+				}
 			}
-			case 21, 39:	// Flamethrower, Flaregun
+			case 21:	// Flamethrower
 			{
 				if(!(damagetype & DMG_CRIT) && damage>5)
 				{
 					damage *= 2.0;
-					changed = true;
+					return Plugin_Changed;
 				}
 			}
 			case 22, 23, 24:	// Pistols, Revolver
@@ -307,7 +316,15 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 				if(!(damagetype & DMG_CRIT))
 				{
 					damage *= 1.5;
-					changed = true;
+					return Plugin_Changed;
+				}
+			}
+			case 39:	// Flaregun
+			{
+				if(damage > 5)
+				{
+					damage *= 2.0;
+					return Plugin_Changed;
 				}
 			}
 			case 56:	// Huntsman
@@ -315,7 +332,25 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 				if(!(damagetype & DMG_CRIT))
 				{
 					damage *= 2.0;
-					changed = true;
+					return Plugin_Changed;
+				}
+			}
+			case 3002:	// Hunting Revolver
+			{
+				if(!(damagetype & DMG_CRIT))
+				{
+					if(Client[client].GlowFor < engineTime)
+					{
+						Client[client].GlowFor = engineTime+3.0;
+					}
+					else if(Client[client].GlowFor != FAR_FUTURE)
+					{
+						Client[client].GlowFor += 2.5;
+						if(Client[client].GlowFor > engineTime+20.0)
+							Client[client].GlowFor = engineTime+20.0;
+					}
+					damage *= 2.0;
+					return Plugin_Changed;
 				}
 			}
 			case 3003:	// Fishwhacker
@@ -323,14 +358,23 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 				if(TF2_IsPlayerInCondition(client, TFCond_Bleeding))
 				{
 					damage *= 1.1;
-					changed = true;
+					return Plugin_Changed;
 				}
 			}
 		}
 	}
-	else if(Hale[client].RageFor > GetEngineTime())
+	else if(Hale[client].RageFor > engineTime)
 	{
 		return Plugin_Handled;
 	}
-	return changed ? Plugin_Changed : Plugin_Continue;
+	return Plugin_Continue;
+}
+
+public void Default_Desc(int client)
+{
+	Menu menu = new Menu(EmptyMenuH);
+	menu.SetTitle("%s\n \nNo boss description\n ", Hale[client].Name);
+	menu.ExitButton = false;
+	menu.AddItem("0", "Exit");
+	menu.Display(client, 15);
 }

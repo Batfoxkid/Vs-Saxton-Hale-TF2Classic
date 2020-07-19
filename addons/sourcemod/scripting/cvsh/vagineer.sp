@@ -122,6 +122,8 @@ void Vag_Setup(int client)
 
 	Hale[client].PlayerTakeDamage = Default_TakeDamage;
 
+	Hale[client].MiscDesc = Vag_Desc;
+
 	TF2_SetPlayerClass(client, VAGCLASS);
 }
 
@@ -252,15 +254,6 @@ public Action Vag_Think(int client, int &buttons)
 {
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
-
-	if(AlivePlayers == 1)
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
-	}
-	else
-	{
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
-	}
 
 	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
@@ -432,4 +425,13 @@ public Action Vag_DissolveRagdoll(Handle timer, any userid)
 	AcceptEntityInput(dissolver, "Dissolve", ragdoll);
 	AcceptEntityInput(dissolver, "Kill");
 	return Plugin_Continue;
+}
+
+public void Vag_Desc(int client)
+{
+	Menu menu = new Menu(EmptyMenuH);
+	menu.SetTitle("Vagineer\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nUbercharge: Call for a medic when rage is ready\n ");
+	menu.ExitButton = false;
+	menu.AddItem("0", "Exit");
+	menu.Display(client, 25);
 }

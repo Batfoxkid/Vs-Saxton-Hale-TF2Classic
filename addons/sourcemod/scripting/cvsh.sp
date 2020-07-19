@@ -11,7 +11,7 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"1"
+#define MINOR_REVISION	"2"
 #define STABLE_REVISION	"0"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
@@ -63,6 +63,7 @@ enum struct ClientEnum
 
 	float HudAt;
 	float StunFor;
+	float GlowFor;
 
 	char Theme[PLATFORM_MAX_PATH];
 	float ThemeAt;
@@ -109,6 +110,7 @@ enum struct HaleEnum
 
 	Function MiscDestory;	// void(int client)
 	Function MiscTheme;	// void(int client)
+	Function MiscDesc;	// void(int client)
 }
 
 bool Enabled;
@@ -131,10 +133,15 @@ ConVar CvarBonus;
 Handle PlayerHud;
 Handle MainHud;
 
+#tryinclude "cvsh/modules/menu.sp"
+
 public void OnPluginStart()
 {
-	RegAdminCmd("sm_stun", Command_Stun, ADMFLAG_RCON, "Usage: sm_stun <target>");
+	#if defined MODULE_MENU
+	Menu_PluginStart();
+	#endif
 
+	RegAdminCmd("sm_stun", Command_Stun, ADMFLAG_RCON, "Usage: sm_stun <target>");
 	RegAdminCmd("ff2_addpoints", Command_AddPoints, ADMFLAG_CHEATS, "Usage: ff2_addpoints <target> [amount]");
 
 	HookEvent("player_spawn", OnPlayerSpawn);
@@ -142,6 +149,7 @@ public void OnPluginStart()
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_PostNoCopy);
 
+	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
 	HookEvent("arena_win_panel", OnWinPanel, EventHookMode_Pre);
 
@@ -403,11 +411,18 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 				continue;
 			}
 
-			if(Hale[i].PlayerSpawn == INVALID_FUNCTION)
+			if(Hale[i].PlayerSpawn != INVALID_FUNCTION)
+			{
+				LogMessage("%d::PlayerSpawn", i);
+				Call_StartFunction(null, Hale[i].PlayerSpawn);
+				Call_PushCell(i);
+				Call_Finish();
+			}
+
+			if(Hale[i].MiscDesc == INVALID_FUNCTION)
 				continue;
 
-			LogMessage("%d::PlayerSpawn", i);
-			Call_StartFunction(null, Hale[i].PlayerSpawn);
+			Call_StartFunction(null, Hale[i].MiscDesc);
 			Call_PushCell(i);
 			Call_Finish();
 		}
@@ -622,13 +637,21 @@ public Action WeHadToKeepThis(Handle timer)
 
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
+	if(!Enabled)
+		return;
+
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(client && !Hale[client].Enabled)
-	{
-		SetVariantString("");
-		AcceptEntityInput(client, "SetCustomModel");
-		SetEntityGravity(client, 1.0);
-	}
+	if(!client || Hale[client].Enabled)
+		return;
+
+	SetVariantString("");
+	AcceptEntityInput(client, "SetCustomModel");
+	SetEntityGravity(client, 1.0);
+
+	#if defined MODULE_MENU
+	if(RoundMode!=0 || !IsVoteInProgress())
+		Menu_InfoClass(client, view_as<int>(TF2_GetPlayerClass(client)));
+	#endif
 }
 
 public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
@@ -728,6 +751,18 @@ public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	return Plugin_Continue;
 }
 
+public Action OnObjectDeflected(Event event, const char[] name, bool dontBroadcast)
+{
+	if(!Enabled || event.GetInt("weaponid"))  // 0 means that the client was airblasted, which is what we want
+		return Plugin_Continue;
+
+	int client = GetClientOfUserId(event.GetInt("ownerid"));
+	if(Hale[client].Enabled)
+		Hale[client].Rage += 200;
+
+	return Plugin_Continue;
+}
+
 public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || RoundMode!=1)
@@ -790,6 +825,10 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		return Plugin_Continue;
 
 	float engineTime = GetEngineTime();
+	bool alive = IsPlayerAlive(client);
+	if(alive)
+		SetEntProp(client, Prop_Send, "m_bGlowEnabled", (AlivePlayers==1 || Client[client].GlowFor>engineTime) ? 1 : 0);
+
 	if(Client[client].ThemeAt < engineTime)
 	{
 		if(Hale[LeaderHale].MiscTheme == INVALID_FUNCTION)
@@ -826,7 +865,6 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		return action;
 	}
 
-	bool alive = IsPlayerAlive(client);
 	if(Client[client].StunFor)
 	{
 		if(alive && Client[client].StunFor>engineTime)
@@ -909,12 +947,10 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		if(AlivePlayers == 1)
 		{
-			SetEntProp(client, Prop_Send, "m_bGlowEnabled", 1);
 			TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.08);
 			return Plugin_Continue;
 		}
-				
-		SetEntProp(client, Prop_Send, "m_bGlowEnabled", 0);
+
 		if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		{
 			TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.08);
@@ -1013,6 +1049,7 @@ public Action OnRoundPre(Handle timer)
 		Hale[i].Health = 200;
 		Hale[i].MaxHealth = 200;
 		Hale[i].Rage = 0;
+		Client[i].GlowFor = 0.0;
 	}
 
 	int[] client = new int[MaxClients];
@@ -1149,6 +1186,12 @@ public Action OnPickup(int entity, int client)
 	return Plugin_Continue;
 }*/
 
+public int EmptyMenuH(Menu menu, MenuAction action, int client, int selection)
+{
+	if(action == MenuAction_End)
+		delete menu;
+}
+
 stock void SetControlPoint(bool enable)
 {
 	int controlPoint = MaxClients+1;
@@ -1267,6 +1310,7 @@ void SetupHale(int i)
 
 	Hale[i].MiscDestory = INVALID_FUNCTION;
 	Hale[i].MiscTheme = INVALID_FUNCTION;
+	Hale[i].MiscDesc = INVALID_FUNCTION;
 
 	switch(GetRandomInt(0, 14))
 	{
