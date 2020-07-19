@@ -1,5 +1,41 @@
 #define MODULE_MENU
 
+static void Changelog(int &page, char[] buffer, int length)
+{
+	switch(page)
+	{
+		case 0:
+		{
+			strcopy(buffer, length, "Changelog: 1.0.0\n \n- Added Vagineer");
+		}
+		case 1:
+		{
+			strcopy(buffer, length, "Changelog: 1.0.1\n \n- Fixed bosses not being able to see the top damage hud");
+		}
+		case 2:
+		{
+			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once");
+		}
+		case 2:
+		{
+			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700");
+		}
+		case 3:
+		{
+			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\nFlaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper");
+		}
+		case 4:
+		{
+			strcopy(buffer, length, "Changelog: 1.2.0 New Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info");
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Fixed Gunboats not giving fall damage resistance");
+			page = 5;
+		}
+	}
+}
+
 void Menu_PluginStart()
 {
 	RegConsoleCmd("hale", Menu_MainC, "Visit the main menu");

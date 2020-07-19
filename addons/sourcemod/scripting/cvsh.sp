@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"2"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -1000,15 +1000,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 
 	if((damagetype & DMG_FALL) && (attacker<1 || client==attacker))
 	{
-		int boots = GetPlayerWeaponSlot(client, TFWeaponSlot_Primary);
-		if(boots>MaxClients && IsValidEntity(boots) && HasEntProp(boots, Prop_Send, "m_iItemDefinitionIndex") && GetEntProp(boots, Prop_Send, "m_iItemDefinitionIndex")==133)
-		{
-			damage /= 5.0;
-			return Plugin_Changed;
-		}
-
-		boots = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-		if(boots>MaxClients && IsValidEntity(boots) && HasEntProp(boots, Prop_Send, "m_iItemDefinitionIndex") && GetEntProp(boots, Prop_Send, "m_iItemDefinitionIndex")==133)
+		if(GetPlayerWeaponSlot(client, TFWeaponSlot_Primary)==-1 || GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)==-1)
 		{
 			damage /= 5.0;
 			return Plugin_Changed;
