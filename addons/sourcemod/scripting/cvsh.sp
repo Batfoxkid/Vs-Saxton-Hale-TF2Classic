@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"3"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -222,6 +222,7 @@ public void OnConfigsExecuted()
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
+	SetConVarBool(FindConVar("tf_damage_disablespread"), !FourTeams);
 	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), FourTeams ? 1 : 0);
 }
 
@@ -567,7 +568,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	RequestFrame(CheckAlivePlayers);
 
 	SetControlPoint(false);
-	SetArenaCapEnableTime(0.0);
+	//SetArenaCapEnableTime(0.0);
 }
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -1145,7 +1146,7 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		}
 	}
 
-	if(Hale[attacker].Enabled)
+	if(attacker>0 && attacker<=MaxClients && Hale[attacker].Enabled)
 	{
 		if(Hale[attacker].PlayerDealDamage != INVALID_FUNCTION)
 		{
