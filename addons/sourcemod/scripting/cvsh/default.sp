@@ -93,7 +93,6 @@ public Action Default_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 340.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
 
@@ -255,12 +254,20 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 		return Plugin_Changed;
 	}
 
+	if(Hale[attacker].Enabled)
+		return Plugin_Continue;
+
 	float engineTime = GetEngineTime();
 	if(weapon>MaxClients && IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
 	{
 		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 		switch(index)
 		{
+			case 0, 1, 2, 3, 5, 6, 7, 8, 32, 37, 3003, 3005, 3008:	// Melee weapons
+			{
+				damagetype |= DMG_CRIT;
+				return Plugin_Changed;
+			}
 			case 9, 10, 11, 12, 3001:	// Shotguns, R.P.G
 			{
 				if(!(damagetype & DMG_CRIT))
@@ -271,18 +278,19 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 			}
 			case 14:	// Sniper Rifle
 			{
+				if(Client[client].GlowFor < engineTime)
+				{
+					Client[client].GlowFor = engineTime+6.0;
+				}
+				else if(Client[client].GlowFor != FAR_FUTURE)
+				{
+					Client[client].GlowFor += 5.0;
+					if(Client[client].GlowFor > engineTime+20.0)
+						Client[client].GlowFor = engineTime+20.0;
+				}
+
 				if(!(damagetype & DMG_CRIT))
 				{
-					if(Client[client].GlowFor < engineTime)
-					{
-						Client[client].GlowFor = engineTime+6.0;
-					}
-					else if(Client[client].GlowFor != FAR_FUTURE)
-					{
-						Client[client].GlowFor += 5.0;
-						if(Client[client].GlowFor > engineTime+20.0)
-							Client[client].GlowFor = engineTime+20.0;
-					}
 					damage *= 2.0;
 					return Plugin_Changed;
 				}
@@ -341,27 +349,20 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 			}
 			case 3002:	// Hunting Revolver
 			{
+				if(Client[client].GlowFor < engineTime)
+				{
+					Client[client].GlowFor = engineTime+3.0;
+				}
+				else if(Client[client].GlowFor != FAR_FUTURE)
+				{
+					Client[client].GlowFor += 2.5;
+					if(Client[client].GlowFor > engineTime+20.0)
+						Client[client].GlowFor = engineTime+20.0;
+				}
+
 				if(!(damagetype & DMG_CRIT))
 				{
-					if(Client[client].GlowFor < engineTime)
-					{
-						Client[client].GlowFor = engineTime+3.0;
-					}
-					else if(Client[client].GlowFor != FAR_FUTURE)
-					{
-						Client[client].GlowFor += 2.5;
-						if(Client[client].GlowFor > engineTime+20.0)
-							Client[client].GlowFor = engineTime+20.0;
-					}
 					damage *= 2.0;
-					return Plugin_Changed;
-				}
-			}
-			case 3003:	// Fishwhacker
-			{
-				if(TF2_IsPlayerInCondition(client, TFCond_Bleeding))
-				{
-					damage *= 1.1;
 					return Plugin_Changed;
 				}
 			}

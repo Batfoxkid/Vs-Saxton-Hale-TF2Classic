@@ -1,16 +1,16 @@
 #define BOSS_VAG	2
 
-#define VAGMODEL	"models/player/saxton_hale/vagineer_v151.mdl"
+#define VAGMODEL	"models/player/saxton_hale/vagineer_v151c.mdl"
 #define VAGCLASS	TFClass_Engineer
 #define VAGRAGEDAMAGE	2700
 
 static const char VagDownload[][] =
 {
-	"models/player/saxton_hale/vagineer_v151.dx80.vtx",
-	"models/player/saxton_hale/vagineer_v151.dx90.vtx",
-	"models/player/saxton_hale/vagineer_v151.mdl",
-	"models/player/saxton_hale/vagineer_v151.sw.vtx",
-	"models/player/saxton_hale/vagineer_v151.vvd",
+	"models/player/saxton_hale/vagineer_v151c.dx80.vtx",
+	"models/player/saxton_hale/vagineer_v151c.dx90.vtx",
+	"models/player/saxton_hale/vagineer_v151c.mdl",
+	"models/player/saxton_hale/vagineer_v151c.sw.vtx",
+	"models/player/saxton_hale/vagineer_v151c.vvd",
 
 	"sound/saxton_hale/vagineer_responce_intro.wav",
 	"sound/saxton_hale/lolwut_0.wav",
@@ -201,14 +201,14 @@ public void Vag_Spawn(int client)
 	TF2_AddCondition(client, TFCond_RestrictToMelee);
 }
 
-public void Vag_Kill(int attacker, int client)
+public Action Vag_Kill(int attacker, int client, char[] logname, char[] iconname)
 {
 	EmitSoundToAll(VAGKILL, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
 	EmitSoundToAll(VAGKILL, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
 	CreateTimer(0.1, Vag_DissolveRagdoll, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 
 	if(AlivePlayers < 3)
-		return;
+		return Plugin_Continue;
 
 	float engineTime = GetEngineTime();
 	if(Hale[attacker].SpreeFor < engineTime)
@@ -221,7 +221,7 @@ public void Vag_Kill(int attacker, int client)
 	if(!Hale[attacker].SpreeNext)
 	{
 		Hale[attacker].SpreeNext = true;
-		return;
+		return Plugin_Continue;
 	}
 
 	Hale[attacker].SpreeFor = 0.0;
@@ -234,10 +234,14 @@ public void Vag_Kill(int attacker, int client)
 		ClientCommand(i, "playgamesound \"%s\"", VagKspree[sound]);
 		ClientCommand(i, "playgamesound \"%s\"", VagKspree[sound]);
 	}
+	return Plugin_Continue;
 }
 
-public void Vag_Death(int client, int attacker)
+public Action Vag_Death(int client, int attacker, char[] logname, char[] iconname)
 {
+	if(client != attacker)
+		CreateTimer(0.1, Vag_DissolveRagdoll, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+
 	int sound = GetRandomInt(0, sizeof(VagDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
@@ -247,6 +251,7 @@ public void Vag_Death(int client, int attacker)
 		ClientCommand(i, "playgamesound \"%s\"", VagDeath[sound]);
 		ClientCommand(i, "playgamesound \"%s\"", VagDeath[sound]);
 	}
+	return Plugin_Continue;
 }
 
 public Action Vag_Sound(int clients[64], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
@@ -263,7 +268,6 @@ public Action Vag_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 340.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
 

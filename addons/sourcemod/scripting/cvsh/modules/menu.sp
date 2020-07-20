@@ -1,44 +1,48 @@
 #define MODULE_MENU
 
-/*static void Changelog(int &page, char[] buffer, int length)
+static void Changelog(int &page, char[] buffer, int length)
 {
 	switch(page)
 	{
 		case 0:
 		{
-			strcopy(buffer, length, "Changelog: 1.0.0\n \n- Added Vagineer");
+			strcopy(buffer, length, "Changelog: 1.0.0\n \n- Added Vagineer\n ");
 		}
 		case 1:
 		{
-			strcopy(buffer, length, "Changelog: 1.0.1\n \n- Fixed bosses not being able to see the top damage hud");
+			strcopy(buffer, length, "Changelog: 1.0.1\n \n- Fixed bosses not being able to see the top damage hud\n ");
 		}
 		case 2:
 		{
-			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once");
+			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once\n ");
 		}
 		case 3:
 		{
-			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700");
+			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700\n ");
 		}
 		case 4:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\nFlaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper");
+			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\nFlaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper\n ");
 		}
 		case 5:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.0 New Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info");
+			strcopy(buffer, length, "Changelog: 1.2.0 Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info\n ");
 		}
 		case 6:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Added boss selection\n- Fixed Gunboats not giving fall damage resistance\n- Removed first arena round");
+			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Added boss selection\n- Fixed Gunboats not giving fall damage resistance\n- Fixed bosses not gaining extra hazard jump height\n- Removed first arena round\n ");
+		}
+		case 7:
+		{
+			strcopy(buffer, length, "Changelog: 1.3.0 Balance Changes\n \n- Increased Christian Brutal Sniper's bleed damage from 4 to 18 a tick\nDecreased Christian Brutal Sniper's Fishwhacker damage from 390 to 300\n- Decreased Sniper Rifle damage from base 100 to 75\n ");
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.2\n \n- ");
-			page = 6;
+			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses\n ");
+			page = 8;
 		}
 	}
-}*/
+}
 
 void Menu_PluginStart()
 {
@@ -95,7 +99,7 @@ static void Menu_Main(int client)
 	menu.AddItem("3", "Boss Selection");
 	menu.AddItem("4", "User Settings", ITEMDRAW_DISABLED);
 	menu.AddItem("5", "Hud Settings", ITEMDRAW_DISABLED);
-	menu.AddItem("6", "Changelog", ITEMDRAW_DISABLED);
+	menu.AddItem("6", "Changelog");
 	menu.AddItem("7", "DISC-FF.com");
 
 	menu.Display(client, MENU_TIME_FOREVER);
@@ -121,6 +125,9 @@ public int Menu_MainH(Menu menu, MenuAction action, int client, int selection)
 
 				case 2:
 					Menu_Select(client, true);
+
+				case 5:
+					Menu_Changelog(client, true);
 
 				default:
 					ClientCommand(client, "sm_helpme");
@@ -169,10 +176,22 @@ static void Menu_Queue(int client, bool back=false)
 	else if(GetClientTeam(client) > view_as<int>(TFTeam_Spectator))
 	{
 		int place = 1;
-		for(int i=1; i<=MaxClients; i++)
+		if(FourTeams)
 		{
-			if(IsClientInGame(i) && Client[i].Queue>Client[client].Queue && GetClientTeam(i)>view_as<int>(TFTeam_Spectator))
-				place++;
+			int team = GetClientTeam(client);
+			for(int i=1; i<=MaxClients; i++)
+			{
+				if(IsClientInGame(i) && Client[i].Queue>Client[client].Queue && GetClientTeam(i)==team)
+					place++;
+			}
+		}
+		else
+		{
+			for(int i=1; i<=MaxClients; i++)
+			{
+				if(IsClientInGame(i) && Client[i].Queue>Client[client].Queue && GetClientTeam(i)>view_as<int>(TFTeam_Spectator))
+					place++;
+			}
 		}
 
 		if(place == 1)
@@ -314,19 +333,19 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Scout\n \n- Pistol deals 50%% more damage\n ");
 
 		case TFClass_Soldier:
-			menu.SetTitle("Class Changes: Soldier\n \n- The R.P.G. deals 35%% more damage\n- The Gunboats reduces fall damage by 80%%\n ");
+			menu.SetTitle("Class Changes: Soldier\n \n- The R.P.G. deals 35%% more damage\n- Shotgun deals 35%% more damage\n- The Gunboats reduces fall damage by 80%%\n ");
 
 		case TFClass_Pyro:
-			menu.SetTitle("Class Changes: Pyro\n \n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- The Flare Gun deals 100%% more damage\n ");
+			menu.SetTitle("Class Changes: Pyro\n \n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- Shotgun deals 35%% more damage\n- The Flare Gun deals 100%% more damage\n ");
 
 		case TFClass_DemoMan:
 			menu.SetTitle("Class Changes: Demoman\n \n- The Dynamite Pack always deals critical hits\n ");
 
 		case TFClass_Heavy:
-			menu.SetTitle("Class Changes: Heavy\n \n- Fists has 75%% more knockback\n ");
+			menu.SetTitle("Class Changes: Heavy\n \n- Shotgun deals 35%% more damage\n ");
 
 		case TFClass_Engineer:
-			menu.SetTitle("Class Changes: Engineer\n \n- Sentries explode upon your death\n ");
+			menu.SetTitle("Class Changes: Engineer\n \n- Shotgun deals 35%% more damage\n- Sentries explode upon your death\n ");
 
 		case TFClass_Medic:
 			menu.SetTitle("Class Changes: Medic\n \n- Syringe Gun deals 35%% more damage and gains 2%% Ubercharge on hit\n- Medi Gun's Ubercharge gives critical hits\n- The Kritzkrieg's Ubercharge gives 67%% damage resistance\n ");
@@ -529,6 +548,78 @@ public int Menu_ConfirmH(Menu menu, MenuAction action, int client, int selection
 			}
 
 			Menu_Select(client, !menu.ExitButton);
+		}
+	}
+}
+
+/*
+	Changelog
+*/
+
+public Action Menu_ChangelogC(int client, int args)
+{
+	if(client)
+	{
+		Menu_Changelog(client);
+	}
+	else
+	{
+		int page = -1;
+		do
+		{
+			static char buffer[512];
+			Changelog(page, buffer, sizeof(buffer));
+			ReplyToCommand(client, "%s\n ", buffer);
+		} while(page-- > 0);
+	}
+	return Plugin_Handled;
+}
+
+static void Menu_Changelog(int client, bool back=false, int page=-1)
+{
+	Menu menu = new Menu(Menu_ChangelogH);
+
+	static char buffer[512];
+	Changelog(page, buffer, sizeof(buffer));
+	menu.SetTitle(buffer);
+
+	IntToString(page, buffer, sizeof(buffer));
+	if(back)
+	{
+		menu.AddItem(buffer, "Newer");
+		menu.AddItem("1", "Older", page ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+		menu.AddItem("", "Back");
+	}
+	else
+	{
+		menu.AddItem(buffer, "Newer");
+		menu.AddItem("0", "Older", page ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_ChangelogH(Menu menu, MenuAction action, int client, int selection)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			if(selection == 2)
+			{
+				Menu_Main(client);
+				return;
+			}
+
+			char buffer[4];
+			menu.GetItem(1, buffer, sizeof(buffer));
+			bool back = view_as<bool>(StringToInt(buffer));
+
+			menu.GetItem(0, buffer, sizeof(buffer));
+			Menu_Changelog(client, back, selection ? StringToInt(buffer)-1 : StringToInt(buffer)+1);
 		}
 	}
 }

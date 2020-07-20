@@ -207,21 +207,21 @@ public void CBS_Spawn(int client)
 	TF2_AddCondition(client, TFCond_RestrictToMelee);
 }
 
-public void CBS_Kill(int client, int victim)
+public Action CBS_Kill(int client, int victim, char[] logname, char[] iconname)
 {
 	float engineTime = GetEngineTime();
 	if(Hale[client].SpreeFor < engineTime)
 	{
 		Hale[client].SpreeNext = false;
 		Hale[client].SpreeFor = engineTime+4.0;
-		return;
+		return Plugin_Continue;
 	}
 
 	Hale[client].SpreeFor = engineTime+4.0;
 	if(!Hale[client].SpreeNext)
 	{
 		Hale[client].SpreeNext = true;
-		return;
+		return Plugin_Continue;
 	}
 
 	Hale[client].SpreeFor = 0.0;
@@ -234,9 +234,10 @@ public void CBS_Kill(int client, int victim)
 		ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
 		ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
 	}
+	return Plugin_Continue;
 }
 
-public void CBS_Death(int client, int attacker)
+public Action CBS_Death(int client, int attacker, char[] logname, char[] iconname)
 {
 	int sound = GetRandomInt(0, sizeof(SoundDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
@@ -247,15 +248,25 @@ public void CBS_Death(int client, int attacker)
 		ClientCommand(i, "playgamesound \"%s\"", SoundDeath[sound]);
 		ClientCommand(i, "playgamesound \"%s\"", SoundDeath[sound]);
 	}
+	return Plugin_Continue;
 }
 
 public Action CBS_DealDamage(int client, int victim, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(weapon<=MaxClients || !IsValidEntity(weapon) || !HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex") || GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex")!=3003)
-		return Plugin_Continue;
-
-	damage *= 2.0;
-	return Plugin_Changed;
+	{
+		if(!TF2_IsPlayerInCondition(victim, TFCond_Kritzkrieged))
+		{
+			damage *= 3.0;
+			return Plugin_Changed;
+		}
+	}
+	else
+	{
+		damage *= TF2_IsPlayerInCondition(victim, TFCond_Kritzkrieged) ? 1.54 : 4.62;
+		return Plugin_Changed;
+	}
+	return Plugin_Continue;
 }
 
 public Action CBS_Think(int client, int &buttons)
@@ -263,7 +274,6 @@ public Action CBS_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 350.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
 

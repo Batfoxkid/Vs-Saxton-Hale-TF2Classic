@@ -2,7 +2,6 @@
 
 #define HALEMODEL	"models/player/saxton_hale_jungle_inferno/saxton_hale.mdl"
 #define HALECLASS	TFClass_Soldier
-#define HALEWEAPON	TFClass_Heavy
 #define HALERAGEDAMAGE	2800
 
 static const char HaleDownload[][] =
@@ -293,7 +292,7 @@ public void Hale_Info(int client, char[] name, char[] desc, bool setup)
 		Hale[client].MiscDestory = Hale_Destory;
 		Hale[client].MiscDesc = Hale_Desc;
 
-		TF2_SetPlayerClass(client, HALEWEAPON);
+		TF2_SetPlayerClass(client, HALECLASS);
 	}
 	else
 	{
@@ -406,12 +405,21 @@ public void Hale_Spawn(int client)
 	}
 
 	TF2_AddCondition(client, TFCond_RestrictToMelee);
+
+	int weapon = GetPlayerWeaponSlot(client, TFWeaponSlot_Melee);
+	if(weapon<=MaxClients || !IsValidEntity(weapon))
+		return;
+
+	SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+	SetEntityRenderColor(weapon, 255, 255, 255, 0);
 }
 
-public void Hale_Kill(int attacker, int client)
+public Action Hale_Kill(int attacker, int client, char[] logname, char[] iconname)
 {
+	strcopy(logname, 32, "fists");
+	strcopy(iconname, 32, "fists");
 	if(AlivePlayers < 3)
-		return;
+		return Plugin_Changed;
 
 	float engineTime = GetEngineTime();
 	if(Hale[attacker].SpreeFor > engineTime)
@@ -420,7 +428,7 @@ public void Hale_Kill(int attacker, int client)
 		if(!Hale[attacker].SpreeNext)
 		{
 			Hale[attacker].SpreeNext = true;
-			return;
+			return Plugin_Changed;
 		}
 
 		Hale[attacker].SpreeFor = 0.0;
@@ -433,7 +441,7 @@ public void Hale_Kill(int attacker, int client)
 			ClientCommand(i, "playgamesound \"%s\"", HaleKspree[sound]);
 			ClientCommand(i, "playgamesound \"%s\"", HaleKspree[sound]);
 		}
-		return;
+		return Plugin_Changed;
 	}
 
 	Hale[attacker].SpreeNext = false;
@@ -473,7 +481,7 @@ public void Hale_Kill(int attacker, int client)
 			strcopy(buffer, sizeof(buffer), HALEKILLCIVIL);
 
 		default:
-			return;
+			return Plugin_Changed;
 	}
 
 	ClientCommand(client, "playgamesound \"%s\"", buffer);
@@ -486,9 +494,10 @@ public void Hale_Kill(int attacker, int client)
 		EmitSoundToClient(i, buffer, attacker, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, attacker, _, NULL_VECTOR, true, 0.0);
 		EmitSoundToClient(i, buffer, attacker, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, attacker, _, NULL_VECTOR, true, 0.0);
 	}
+	return Plugin_Changed;
 }
 
-public void Hale_Death(int client, int attacker)
+public Action Hale_Death(int client, int attacker, char[] logname, char[] iconname)
 {
 	int sound = GetRandomInt(0, sizeof(HaleDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
@@ -499,6 +508,7 @@ public void Hale_Death(int client, int attacker)
 		ClientCommand(i, "playgamesound \"%s\"", HaleDeath[sound]);
 		ClientCommand(i, "playgamesound \"%s\"", HaleDeath[sound]);
 	}
+	return Plugin_Continue;
 }
 
 public void Hale_Destory(int client)
@@ -515,7 +525,6 @@ public Action Hale_Think(int client, int &buttons)
 	if(!IsPlayerAlive(client))
 		return Plugin_Continue;
 
-	TF2_AddCondition(client, TFCond_HalloweenCritCandy);
 	SetEntityHealth(client, Hale[client].Health);
 
 	if(GetEntProp(client, Prop_Send, "m_bDucked") && (GetEntityFlags(client) & FL_ONGROUND))
@@ -713,26 +722,29 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 	if(changed)
 		damagetype |= DMG_PREVENT_PHYSICS_FORCE;
 
-	float engineTime = GetEngineTime();
-	if(weapon>MaxClients && IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
+	if(!Hale[attacker].Enabled)
 	{
-		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
-		switch(index)
+		float engineTime = GetEngineTime();
+		if(weapon>MaxClients && IsValidEntity(weapon) && HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
 		{
-			case 9, 10, 11, 12, 3001:	// Shotguns, R.P.G
+			int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+			switch(index)
 			{
-				if(!(damagetype & DMG_CRIT))
+				case 0, 1, 2, 3, 5, 6, 7, 8, 32, 37, 3003, 3005, 3008:	// Melee weapons
 				{
-					damage *= 1.35;
-					changed = true;
+					damagetype |= DMG_CRIT;
+					return Plugin_Changed;
 				}
-			}
-			case 14:	// Sniper Rifle
-			{
-				if(!(damagetype & DMG_CRIT))
+				case 9, 10, 11, 12, 3001:	// Shotguns, R.P.G
 				{
-					damage *= 2.0;
-					changed = true;
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 1.35;
+						return Plugin_Changed;
+					}
+				}
+				case 14:	// Sniper Rifle
+				{
 					if(Client[client].GlowFor < engineTime)
 					{
 						Client[client].GlowFor = engineTime+6.0;
@@ -743,66 +755,67 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 						if(Client[client].GlowFor > engineTime+20.0)
 							Client[client].GlowFor = engineTime+20.0;
 					}
-				}
-			}
-			case 16:	// SMG
-			{
-				if(!(damagetype & DMG_CRIT))
-				{
-					damage *= 2.0;
-					changed = true;
-				}
-			}
-			case 17:	// Syringe Gun
-			{
-				if(!(damagetype & DMG_CRIT))
-				{
-					damage *= 1.35;
-					changed = true;
-				}
 
-				int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
-				if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
-					SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
-			}
-			case 21:	// Flamethrower
-			{
-				if(!(damagetype & DMG_CRIT) && damage>5)
-				{
-					damage *= 2.0;
-					changed = true;
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 1.5;
+						return Plugin_Changed;
+					}
 				}
-			}
-			case 22, 23, 24:	// Pistols, Revolver
-			{
-				if(!(damagetype & DMG_CRIT))
+				case 16:	// SMG
 				{
-					damage *= 1.5;
-					changed = true;
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 2.0;
+						return Plugin_Changed;
+					}
 				}
-			}
-			case 39:	// Flaregun
-			{
-				if(damage > 5)
+				case 17:	// Syringe Gun
 				{
-					damage *= 2.0;
-					changed = true;
+					int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
+						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
+
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 1.35;
+						return Plugin_Changed;
+					}
 				}
-			}
-			case 56:	// Huntsman
-			{
-				if(!(damagetype & DMG_CRIT))
+				case 21:	// Flamethrower
 				{
-					damage *= 2.0;
-					changed = true;
+					if(!(damagetype & DMG_CRIT) && damage>5)
+					{
+						damage *= 2.0;
+						return Plugin_Changed;
+					}
 				}
-			}
-			case 3002:	// Hunting Revolver
-			{
-				if(!(damagetype & DMG_CRIT))
+				case 22, 23, 24:	// Pistols, Revolver
 				{
-					damage *= 2.0;
-					changed = true;
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 1.5;
+						return Plugin_Changed;
+					}
+				}
+				case 39:	// Flaregun
+				{
+					if(damage > 5)
+					{
+						damage *= 2.0;
+						return Plugin_Changed;
+					}
+				}
+				case 56:	// Huntsman
+				{
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 2.0;
+						return Plugin_Changed;
+					}
+				}
+				case 3002:	// Hunting Revolver
+				{
 					if(Client[client].GlowFor < engineTime)
 					{
 						Client[client].GlowFor = engineTime+3.0;
@@ -813,21 +826,19 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 						if(Client[client].GlowFor > engineTime+20.0)
 							Client[client].GlowFor = engineTime+20.0;
 					}
-				}
-			}
-			case 3003:	// Fishwhacker
-			{
-				if(TF2_IsPlayerInCondition(client, TFCond_Bleeding))
-				{
-					damage *= 1.1;
-					changed = true;
+
+					if(!(damagetype & DMG_CRIT))
+					{
+						damage *= 1.5;
+						return Plugin_Changed;
+					}
 				}
 			}
 		}
-	}
-	else if(Hale[client].RageFor > engineTime)
-	{
-		return Plugin_Handled;
+		else if(Hale[client].RageFor > engineTime)
+		{
+			return Plugin_Handled;
+		}
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
 }

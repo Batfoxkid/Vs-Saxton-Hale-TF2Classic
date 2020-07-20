@@ -11,8 +11,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"2"
-#define STABLE_REVISION	"1"
+#define MINOR_REVISION	"3"
+#define STABLE_REVISION	"0"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -57,6 +57,16 @@ static const int ClassLimit[] =
 	0	// Cilvilian
 };
 
+static const int TeamColor[][] =
+{
+	{ 0, 0, 0, 255 },	// Unassigned
+	{ 225, 225, 255, 255 },	// Spectator
+	{ 255, 0, 0, 255 },	// Red
+	{ 0, 0, 255, 255 },	// Blue
+	{ 0, 255, 0, 255 },	// Green
+	{ 255, 255, 0, 255 }	// Yellow
+};
+
 enum struct ClientEnum
 {
 	int Damage;
@@ -76,9 +86,9 @@ enum struct ClientEnum
 enum struct HaleEnum
 {
 	bool Enabled;
-	bool Respawning;
 	int MaxHealth;
 	int Health;
+	int Team;
 
 	int Rage;
 	float RageFor;
@@ -106,8 +116,8 @@ enum struct HaleEnum
 	Function PlayerVoice;	// void(int client)
 	Function PlayerCommand;	// void(int client, int &buttons)
 
-	Function PlayerKill;	// void(int client, int victim)
-	Function PlayerDeath;	// void(int client, int attacker)
+	Function PlayerKill;	// Action(int client, int victim, char[] logname, char[] iconname)
+	Function PlayerDeath;	// Action(int client, int attacker, char[] logname, char[] iconname)
 
 	Function PlayerTakeDamage;	// Action(int client, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 	Function PlayerDealDamage;	// Action(int client, int victim, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
@@ -118,6 +128,7 @@ enum struct HaleEnum
 }
 
 bool Enabled;
+bool FourTeams;
 int RoundMode;
 int LeaderHale;
 int AlivePlayers;
@@ -152,7 +163,7 @@ public void OnPluginStart()
 	HookEvent("player_spawn", OnPlayerSpawn);
 	//HookEvent("player_changeclass", OnPlayerChangeClass);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
-	HookEvent("player_death", OnPlayerDeath, EventHookMode_PostNoCopy);
+	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 
 	HookEvent("object_deflected", OnObjectDeflected, EventHookMode_Pre);
 	HookEvent("object_destroyed", OnObjectDestroyed, EventHookMode_Pre);
@@ -193,6 +204,27 @@ public void OnPluginStart()
 	}
 }
 
+public void OnConfigsExecuted()
+{
+	FourTeams = false;
+
+	int i;
+	while((i=FindEntityByClassname(i, "tf_gamerules")) != -1)
+	{
+		FourTeams = view_as<bool>(GetEntProp(i, Prop_Send, "m_bFourTeamMode"));
+		break;
+	}
+
+	SetConVarBool(FindConVar("tf_arena_use_queue"), false);
+	SetConVarBool(FindConVar("tf_arena_first_blood"), false);
+	SetConVarBool(FindConVar("mp_forcecamera"), false);
+	SetConVarInt(FindConVar("tf_weapon_criticals_melee"), 0);
+	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
+
+	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
+	SetConVarInt(FindConVar("mp_teams_unbalance_limit"), FourTeams ? 1 : 0);
+}
+
 public void OnMapEnd()
 {
 	Enabled = false;
@@ -211,7 +243,11 @@ public void OnPluginEnd()
 public void OnClientPostAdminCheck(int client)
 {
 	Client[client].ThemeAt = GetEngineTime()+2.0;
-	Client[client].Selection = 0;
+	Client[client].Selection = IsFakeClient(client) ? -1 : 0;
+	Client[client].Damage = 0;
+	Client[client].GlowFor = 0.0;
+	Hale[client].Enabled = false;
+	Hale[client].Rage = 0;
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	if(!AreClientCookiesCached(client))
 	{
@@ -325,6 +361,9 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 	if(!client || !Enabled)
 		return Plugin_Continue;
 
+	if(FourTeams)
+		return Hale[client].Enabled ? Plugin_Handled : Plugin_Continue;
+
 	static char buffer[10];
 	GetCmdArg(1, buffer, sizeof(buffer));
 	if(!buffer[0])
@@ -336,7 +375,7 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 		{
 			if(Hale[client].Enabled)
 			{
-				ChangeClientTeam(client, BossTeam);
+				ChangeClientTeam(client, Hale[client].Team);
 			}
 			else
 			{
@@ -370,10 +409,11 @@ public Action OnJoinClass(int client, const char[] command, int args)
 	if(class==TFClass_Unknown || ClassLimit[class]<1 || TF2_GetPlayerClass(client)==class)
 		return Plugin_Continue;
 
+	int team = GetClientTeam(client);
 	int clients, classes;
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i) || GetClientTeam(i)!=MercTeam)
+		if(!IsClientInGame(i) || GetClientTeam(i)!=team)
 			continue;
 
 		clients++;
@@ -411,9 +451,9 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 		if(Hale[i].Enabled)
 		{
 			Client[i].Queue = 0;
-			if(GetClientTeam(i) != BossTeam)
+			if(GetClientTeam(i) != Hale[i].Team)
 			{
-				ChangeClientTeam(i, BossTeam);
+				ChangeClientTeam(i, Hale[i].Team);
 				continue;
 			}
 
@@ -443,13 +483,14 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 			menu.AddItem("0", "Exit");
 			menu.Display(i, 25);
 		}
-		else if(GetClientTeam(i) != MercTeam)
+		else if(!FourTeams && GetClientTeam(i)!=MercTeam)
 		{
 			ChangeClientTeam(i, MercTeam);
 		}
 	}
 
-	CreateTimer(GetConVarFloat(FindConVar("tf_arena_preround_time"))/2.857, StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+	if(!FourTeams)
+		CreateTimer(GetConVarFloat(FindConVar("tf_arena_preround_time"))/2.857, StartResponseTimer, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action StartResponseTimer(Handle timer)
@@ -479,16 +520,12 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 
 		Client[i].ThemeAt = engineTime+1.5;
 		if(GetClientTeam(i) <= view_as<int>(TFTeam_Spectator))
-		{
-			Client[i].HudAt = engineTime+10.5;
 			continue;
-		}
 
-		client[clients++] = i;
 		if(Hale[i].Enabled)
 		{
-			if(GetClientTeam(i) != BossTeam)
-				ChangeClientTeam(i, BossTeam);
+			if(GetClientTeam(i) != Hale[i].Team)
+				ChangeClientTeam(i, Hale[i].Team);
 
 			if(Hale[i].RoundStart == INVALID_FUNCTION)
 				continue;
@@ -497,15 +534,24 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 			Call_StartFunction(null, Hale[i].RoundStart);
 			Call_PushCell(i);
 			Call_Finish();
+			continue;
 		}
-		else if(GetClientTeam(i) != MercTeam)
-		{
-			Client[i].HudAt = engineTime+10.5;
+
+		client[clients++] = i;
+		if(!FourTeams && GetClientTeam(i)!=MercTeam)
 			ChangeClientTeam(i, MercTeam);
-		}
 	}
 
-	if(IsClientInGame(LeaderHale))
+	if(FourTeams)
+	{
+		int health = 2600+(clients*25);
+		for(int i; i<MAXPLAYERS; i++)
+		{
+			Hale[i].Health = health;
+			Hale[i].MaxHealth = health;
+		}
+	}
+	else if(IsClientInGame(LeaderHale))
 	{
 		Hale[LeaderHale].Health = RoundFloat((Pow((758.8+clients)*(clients-1), 1.0341)+1046.0));
 		Hale[LeaderHale].MaxHealth = Hale[LeaderHale].Health;
@@ -513,6 +559,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 		SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
 		for(int i; i<clients; i++)
 		{
+			Client[client[i]].HudAt = engineTime+10.5;
 			ShowSyncHudText(client[i], MainHud, "%N became %s\nwith %d HP", LeaderHale, Hale[LeaderHale].Name, Hale[LeaderHale].Health);
 		}
 	}
@@ -520,14 +567,75 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	RequestFrame(CheckAlivePlayers);
 
 	SetControlPoint(false);
-	//SetArenaCapEnableTime(0.0);
+	SetArenaCapEnableTime(0.0);
 }
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	float bonusRoundTime = CvarBonus.FloatValue-0.5;
 	RoundMode = 2;
-	if(Enabled)
+	if(!Enabled)
+	{
+		Enabled = true;
+	}
+	else if(FourTeams)
+	{
+		int clients;
+		int[] client = new int[MaxClients];
+		for(int i=1; i<=MaxClients; i++)
+		{
+			if(!IsClientInGame(i))
+				continue;
+
+			if(Client[i].Theme[0])
+			{
+				StopSound(i, SNDCHAN_STATIC, Client[i].Theme);
+				Client[i].Theme[0] = 0;
+				Client[i].ThemeAt = FAR_FUTURE;
+			}
+
+			client[clients++] = i;
+			if(Hale[i].Enabled)
+			{
+				if(Hale[i].RoundEnd != INVALID_FUNCTION)
+				{
+					Call_StartFunction(null, Hale[i].RoundEnd);
+					Call_PushCell(i);
+					Call_Finish();
+				}
+			}
+			else
+			{
+				Client[i].Queue += 5;
+			}
+		}
+
+		int hales;
+		for(int team=2; team<6; team++)
+		{
+			for(int i; i<clients; i++)
+			{
+				if(Hale[client[i]].Enabled && Hale[client[i]].Team==team)
+				{
+					bool alive = IsPlayerAlive(client[i]);
+					SetHudTextParamsEx(-1.0, 0.25+(hales*0.05), bonusRoundTime, TeamColor[team]);
+					for(int a; a<clients; a++)
+					{
+						if(alive)
+						{
+							ShowHudText(client[a], hales, "%s (%N) had %d HP left", Hale[client[i]].Name, client[i], Hale[client[i]].Health);
+						}
+						else
+						{
+							ShowHudText(client[a], hales, "%s (%N) was killed", Hale[client[i]].Name, client[i]);
+						}
+					}
+					hales++;
+				}
+			}
+		}
+	}
+	else
 	{
 		int top[3];
 		int clients;
@@ -559,6 +667,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			if(Client[i].Damage < 1)
 				continue;
 
+			Client[i].Queue += 10;
 			if(Client[i].Damage >= Client[top[0]].Damage)
 			{
 				top[2] = top[1];
@@ -579,11 +688,11 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 		if(top[0] > 9000)
 			CreateTimer(1.0, WeHadToKeepThis, _, TIMER_FLAG_NO_MAPCHANGE);
 
-		bool won = event.GetInt("team")==BossTeam;
+		int won = event.GetInt("team");
 
 		char buffer[256];
 		if(IsClientInGame(LeaderHale) && IsPlayerAlive(LeaderHale))
-			FormatEx(buffer, sizeof(buffer), "%s (%N) %s with %d HP left", Hale[LeaderHale].Name, LeaderHale, won ? "won" : "lost", Hale[LeaderHale].Health);
+			FormatEx(buffer, sizeof(buffer), "%s (%N) %s with %d HP left", Hale[LeaderHale].Name, LeaderHale, won==Hale[LeaderHale].Team ? "won" : "lost", Hale[LeaderHale].Health);
 
 		if(top[2] > 0)
 		{
@@ -602,38 +711,29 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			Format(buffer, sizeof(buffer), "%s\n \n \nNo one dealt any damage...", buffer);
 		}
 
-		if(won)
+		if(won==Hale[LeaderHale].Team && Hale[LeaderHale].RoundWin!=INVALID_FUNCTION)
 		{
-			if(Hale[LeaderHale].RoundWin != INVALID_FUNCTION)
-			{
-				LogMessage("%d::RoundWin", LeaderHale);
-				Call_StartFunction(null, Hale[LeaderHale].RoundWin);
-				Call_Finish();
-			}
+			LogMessage("%d::RoundWin", LeaderHale);
+			Call_StartFunction(null, Hale[LeaderHale].RoundWin);
+			Call_Finish();
 		}
 
 		SetHudTextParams(-1.0, 0.25, bonusRoundTime, 255, 255, 255, 255);
 		for(int i; i<clients; i++)
 		{
-			if(LeaderHale == client[i])
+			if(Hale[client[i]].Enabled)
 			{
-				ShowSyncHudText(client[i], MainHud, "%s\n \n%s", buffer, won ? "Congratulations! You won!" : "Oh no, you lost!\nDon't worry, there's always next time");
+				ShowSyncHudText(client[i], MainHud, "%s\n \n%s", buffer, won==Hale[client[i]].Team ? "Congratulations! You won!" : "Oh no, you lost!\nDon't worry, there's always next time");
 			}
 			else if(top[2] < 1)
 			{
 				ShowSyncHudText(client[i], MainHud, buffer);
-				Client[client[i]].Queue += 20;
 			}
 			else
 			{
 				ShowSyncHudText(client[i], MainHud, "%s\n \nYou dealt %d damage this round", buffer, Client[client[i]].Damage);
-				Client[client[i]].Queue += 10;
 			}
 		}
-	}
-	else
-	{
-		Enabled = true;
 	}
 
 	CreateTimer(bonusRoundTime, OnRoundPre, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -671,28 +771,34 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	#endif
 }
 
-public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	if(!Enabled || RoundMode!=1)
-		return;
+		return Plugin_Continue;
 
 	RequestFrame(CheckAlivePlayers);
 
 	int userid = event.GetInt("userid");
 	int client = GetClientOfUserId(userid);
 	if(!client)
-		return;
+		return Plugin_Continue;
 
+	char log[32], icon[32];
+	event.GetString("weapon", icon, sizeof(icon));
+	event.GetString("weapon_logclassname", log, sizeof(log));
+
+	Action action = Plugin_Continue;
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
 	if(Hale[client].Enabled)
 	{
 		if(Hale[client].PlayerDeath != INVALID_FUNCTION)
 		{
-			LogMessage("%d::PlayerDeath", client);
 			Call_StartFunction(null, Hale[client].PlayerDeath);
 			Call_PushCell(client);
 			Call_PushCell(attacker);
-			Call_Finish();
+			Call_PushStringEx(log, sizeof(log), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushStringEx(icon, sizeof(icon), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_Finish(action);
 		}
 	}
 	else if(TF2_GetPlayerClass(client) == TFClass_Engineer)
@@ -720,12 +826,24 @@ public void OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 	if(Hale[attacker].Enabled && Hale[attacker].PlayerKill!=INVALID_FUNCTION)
 	{
-		LogMessage("%d::PlayerKill", attacker);
 		Call_StartFunction(null, Hale[attacker].PlayerKill);
 		Call_PushCell(attacker);
 		Call_PushCell(client);
-		Call_Finish();
+		Call_PushStringEx(log, sizeof(log), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+		Call_PushStringEx(icon, sizeof(icon), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+
+		Action action2;
+		Call_Finish(action2);
+		if(action2 > action)
+			action = action2;
 	}
+
+	if(action != Plugin_Continue)
+	{
+		event.SetString("weapon", icon);
+		event.SetString("weapon_logclassname", log);
+	}
+	return action;
 }
 
 public void OnClientDisconnect(int client)
@@ -798,7 +916,7 @@ public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadca
 
 public Action OnWinPanel(Event event, const char[] name, bool dontBroadcast)
 {
-	return Enabled ? Plugin_Handled : Plugin_Continue;
+	return (Enabled && !FourTeams) ? Plugin_Handled : Plugin_Continue;
 }
 
 public Action HookSound(int clients[MAXPLAYERS], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
@@ -848,7 +966,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 	if(Client[client].ThemeAt < engineTime)
 	{
-		if(Hale[LeaderHale].MiscTheme == INVALID_FUNCTION)
+		if(FourTeams || Hale[LeaderHale].MiscTheme==INVALID_FUNCTION)
 		{
 			Client[client].ThemeAt = FAR_FUTURE;
 		}
@@ -921,8 +1039,11 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 	if(!(buttons & IN_SCORE) && Client[client].HudAt<engineTime && (alive || IsClientObserver(client)))
 	{
-		SetHudTextParams(-1.0, 0.83, HUD_INTERVAL+HUD_LINGER, 90, 255, 255, 255, 0, 0.35, 0.0, 0.1);
-		ShowSyncHudText(client, MainHud, "%s: %d HP", Hale[LeaderHale].Name, Hale[LeaderHale].Health);
+		if(!FourTeams)
+		{
+			SetHudTextParams(-1.0, 0.83, HUD_INTERVAL+HUD_LINGER, 90, 255, 255, 255, 0, 0.35, 0.0, 0.1);
+			ShowSyncHudText(client, MainHud, "%s: %d HP", Hale[LeaderHale].Name, Hale[LeaderHale].Health);
+		}
 		Client[client].HudAt = engineTime+HUD_INTERVAL;
 
 		int target;
@@ -960,7 +1081,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 
-	if(alive)
+	if(alive && !FourTeams)
 	{
 		if(AlivePlayers == 1)
 		{
@@ -1023,29 +1144,32 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			return Plugin_Changed;
 		}
 	}
-	else if((damagetype & DMG_CRIT) && TF2_IsPlayerInCondition(client, TFCond_Kritzkrieged))
-	{
-		damagetype &= ~DMG_CRIT;
-		changed = true;
-	}
 
-	if(Hale[attacker].Enabled && Hale[attacker].PlayerDealDamage!=INVALID_FUNCTION)
+	if(Hale[attacker].Enabled)
 	{
-		Call_StartFunction(null, Hale[attacker].PlayerDealDamage);
-		Call_PushCell(attacker);
-		Call_PushCell(client);
-		Call_PushCellRef(inflictor);
-		Call_PushFloatRef(damage);
-		Call_PushCellRef(damagetype);
-		Call_PushCellRef(weapon);
-		Call_PushArrayEx(damageForce, 3, SM_PARAM_COPYBACK);
-		Call_PushArrayEx(damagePosition, 3, SM_PARAM_COPYBACK);
-		Call_PushCell(damagecustom);
+		if(Hale[attacker].PlayerDealDamage != INVALID_FUNCTION)
+		{
+			Call_StartFunction(null, Hale[attacker].PlayerDealDamage);
+			Call_PushCell(attacker);
+			Call_PushCell(client);
+			Call_PushCellRef(inflictor);
+			Call_PushFloatRef(damage);
+			Call_PushCellRef(damagetype);
+			Call_PushCellRef(weapon);
+			Call_PushArrayEx(damageForce, 3, SM_PARAM_COPYBACK);
+			Call_PushArrayEx(damagePosition, 3, SM_PARAM_COPYBACK);
+			Call_PushCell(damagecustom);
 
-		Action action;
-		Call_Finish(action);
-		if(action != Plugin_Continue)
-			return action;
+			Action action;
+			Call_Finish(action);
+			if(action != Plugin_Continue)
+				return action;
+		}
+		else if(!TF2_IsPlayerInCondition(client, TFCond_Kritzkrieged))
+		{
+			damage *= 3.0;
+			changed = true;
+		}
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
@@ -1066,78 +1190,160 @@ public void TF2_OnWaitingForPlayersEnd()
 		Client[i].GlowFor = 0.0;
 	}
 
-	int[] client = new int[MaxClients];
-	int hale, points, clients;
-	for(int i=1; i<=MaxClients; i++)
+	if(FourTeams)
 	{
-		if(!IsClientInGame(i) || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
-			continue;
+		Enabled = true;
 
-		client[clients++] = i;
-		if(Client[i].Queue < points)
-			continue;
-
-		hale = i;
-		points = Client[i].Queue;
-	}
-
-	if(!hale)
-	{
-		Enabled = false;
-		return;
-	}
-
-	Enabled = true;
-	LeaderHale = hale;
-	SetupHale(hale);
-	Hale[hale].Enabled = true;
-	ChangeClientTeam(hale, BossTeam);
-
-	int[][] class = new int[11][clients];
-	int classes[11];
-	for(int i; i<clients; i++)
-	{
-		if(client[i] == hale)
-			continue;
-
-		ChangeClientTeam(client[i], MercTeam);
-		int current = GetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass");
-		if(current == view_as<int>(TFClass_Unknown))
-			SetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
-
-		if(current < 11)
-			class[current][classes[current]++] = client[i];
-	}
-
-	for(int i; i<11; i++)
-	{
-		if(ClassLimit[i]<1 || !classes[i])
-			continue;
-
-		int limit = ClassLimit[i];
-		if(clients > 32)
-			limit += RoundToCeil(ClassLimit[i]*((clients-32.0)/32.0));
-
-		while(classes[i] > limit)
+		for(int team=5; team>1; team--)
 		{
-			hale = 0;
-			points = 0;
-			for(int a; a<classes[i]; a++)
+			int[] client = new int[MaxClients];
+			int hale, points, clients;
+			for(int i=1; i<=MaxClients; i++)
 			{
-				if(!class[i][a] || (points && Client[class[i][a]].Damage>points))
+				if(!IsClientInGame(i) || GetClientTeam(i)!=team)
 					continue;
 
-				hale = a;
-				points = Client[class[i][a]].Damage;
+				client[clients++] = i;
+				if(Client[i].Queue < points)
+					continue;
+
+				hale = i;
+				points = Client[i].Queue;
 			}
 
 			if(!hale)
-				break;
+				continue;
 
-			PrintCenterText(class[i][hale], "Your class was changed because of class limits!");
-			SetEntProp(class[i][hale], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
-			class[i][hale] = 0;
-			limit--;
+			LeaderHale = hale;
+			SetupHale(hale);
+			Hale[hale].Enabled = true;
+			Hale[hale].Team = team;
+			Client[hale].GlowFor = FAR_FUTURE;
+
+			int[][] class = new int[11][clients];
+			int classes[11];
+			for(int i; i<clients; i++)
+			{
+				if(client[i] == hale)
+					continue;
+
+				int current = GetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass");
+				if(current == view_as<int>(TFClass_Unknown))
+					SetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+
+				if(current < 11)
+					class[current][classes[current]++] = client[i];
+			}
+
+			for(int i; i<11; i++)
+			{
+				if(ClassLimit[i]<1 || !classes[i])
+					continue;
+
+				int limit = ClassLimit[i];
+				if(clients > 32)
+					limit += RoundToCeil(ClassLimit[i]*((clients-32.0)/32.0));
+
+				while(classes[i] > limit)
+				{
+					hale = 0;
+					points = 0;
+					for(int a; a<classes[i]; a++)
+					{
+						if(!class[i][a] || (points && Client[class[i][a]].Damage>points))
+							continue;
+
+						hale = a;
+						points = Client[class[i][a]].Damage;
+					}
+
+					if(!hale)
+						break;
+
+					PrintCenterText(class[i][hale], "Your class was changed because of class limits!");
+					SetEntProp(class[i][hale], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+					class[i][hale] = 0;
+					limit--;
+				}
+			}
+		}
+	}
+	else
+	{
+		int[] client = new int[MaxClients];
+		int hale, points, clients;
+		for(int i=1; i<=MaxClients; i++)
+		{
+			if(!IsClientInGame(i) || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
+				continue;
+
+			client[clients++] = i;
+			if(Client[i].Queue < points)
+				continue;
+
+			hale = i;
+			points = Client[i].Queue;
+		}
+
+		if(!hale)
+		{
+			Enabled = false;
+			return;
+		}
+
+		Enabled = true;
+		LeaderHale = hale;
+		SetupHale(hale);
+		Hale[hale].Team = BossTeam;
+		Hale[hale].Enabled = true;
+		ChangeClientTeam(hale, BossTeam);
+
+		int[][] class = new int[11][clients];
+		int classes[11];
+		for(int i; i<clients; i++)
+		{
+			if(client[i] == hale)
+				continue;
+
+			ChangeClientTeam(client[i], MercTeam);
+			int current = GetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass");
+			if(current == view_as<int>(TFClass_Unknown))
+				SetEntProp(client[i], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+
+			if(current < 11)
+				class[current][classes[current]++] = client[i];
+		}
+
+		for(int i; i<11; i++)
+		{
+			if(ClassLimit[i]<1 || !classes[i])
+				continue;
+
+			int limit = ClassLimit[i];
+			if(clients > 32)
+				limit += RoundToCeil(ClassLimit[i]*((clients-32.0)/32.0));
+
+			while(classes[i] > limit)
+			{
+				hale = 0;
+				points = 0;
+				for(int a; a<classes[i]; a++)
+				{
+					if(!class[i][a] || (points && Client[class[i][a]].Damage>points))
+						continue;
+
+					hale = a;
+					points = Client[class[i][a]].Damage;
+				}
+
+				if(!hale)
+					break;
+
+				PrintCenterText(class[i][hale], "Your class was changed because of class limits!");
+				SetEntProp(class[i][hale], Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+				class[i][hale] = 0;
+				limit--;
+			}
 		}
 	}
 
@@ -1149,6 +1355,38 @@ public void TF2_OnWaitingForPlayersEnd()
 
 public void CheckAlivePlayers()
 {
+	if(!Enabled || RoundMode!=1)
+		return;
+
+	if(FourTeams)
+	{
+		int players;
+		AlivePlayers = -1;
+		for(int i=1; i<=MaxClients; i++)
+		{
+			if(!IsClientInGame(i) || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
+				continue;
+
+			players++;
+			if(IsPlayerAlive(i))
+				AlivePlayers++;
+		}
+
+		if(players > 32)
+		{
+			players = 4+((players-32)/8);
+		}
+		else
+		{
+			players = 4;
+		}
+
+		if(AlivePlayers < players)
+			SetControlPoint(true);
+
+		return;
+	}
+
 	bool last = AlivePlayers==1;
 
 	int players;
@@ -1162,9 +1400,6 @@ public void CheckAlivePlayers()
 		if(IsPlayerAlive(i))
 			AlivePlayers++;
 	}
-
-	if(!Enabled || RoundMode!=1)
-		return;
 
 	if(players > 32)
 	{
