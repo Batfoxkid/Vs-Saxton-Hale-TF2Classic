@@ -160,10 +160,12 @@ public Action Vag_OnRage(int client)
 	GetEntPropVector(client, Prop_Send, "m_vecOrigin", position);
 
 	int sound = GetRandomInt(0, sizeof(VagRage)-1);
-	ClientCommand(client, "playgamesound %s", VagRage[sound]);
+	if(!Client[client].NoVoice)
+		ClientCommand(client, "playgamesound %s", VagRage[sound]);
+
 	for(int target=1; target<=MaxClients; target++)
 	{
-		if(target==client || !IsClientInGame(target))
+		if(target==client || Client[target].NoVoice || !IsClientInGame(target))
 			continue;
 
 		EmitSoundToClient(target, VagRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
@@ -178,7 +180,7 @@ public void Vag_Intro()
 	int sound = GetRandomInt(0, sizeof(VagIntro)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", VagIntro[sound]);
@@ -228,7 +230,7 @@ public Action Vag_Kill(int attacker, int client, char[] logname, char[] iconname
 	int sound = GetRandomInt(0, sizeof(VagKspree)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", VagKspree[sound]);
@@ -245,7 +247,7 @@ public Action Vag_Death(int client, int attacker, char[] logname, char[] iconnam
 	int sound = GetRandomInt(0, sizeof(VagDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", VagDeath[sound]);
@@ -311,15 +313,19 @@ public Action Vag_Think(int client, int &buttons)
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
 
 					int sound = GetRandomInt(0, sizeof(VagJump)-1);
-					EmitSoundToAll(VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					EmitSoundToAll(VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					for(int enemy=1; enemy<=MaxClients; enemy++)
+					for(int i=1; i<=MaxClients; i++)
 					{
-						if(enemy!=client && IsClientInGame(enemy))
-						{
-							EmitSoundToClient(enemy, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-							EmitSoundToClient(enemy, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-						}
+						if(!IsClientInGame(i) || Client[i].NoVoice)
+							continue;
+
+						EmitSoundToClient(i, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+
+						if(i == client)
+							continue;
+
+						EmitSoundToClient(i, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, VagJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
 					}
 				}
 
@@ -402,7 +408,7 @@ public void Vag_Lastman()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientInGame(i))
+		if(IsClientInGame(i) || Client[i].NoVoice)
 			ClientCommand(i, "playgamesound \"%s\"", VAGLAST);
 	}
 }
@@ -411,7 +417,7 @@ public void Vag_Win()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientInGame(i))
+		if(IsClientInGame(i) || Client[i].NoVoice)
 			ClientCommand(i, "playgamesound \"%s\"", VAGWIN);
 	}
 }

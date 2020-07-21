@@ -22,7 +22,7 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		case 4:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\nFlaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper\n ");
+			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\n- Flaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper\n ");
 		}
 		case 5:
 		{
@@ -34,12 +34,16 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		case 7:
 		{
-			strcopy(buffer, length, "Changelog: 1.3.0 Balance Changes\n \n- Increased Christian Brutal Sniper's bleed damage from 4 to 18 a tick\nDecreased Christian Brutal Sniper's Fishwhacker damage from 390 to 300\n- Decreased Sniper Rifle damage from base 100 to 75\n ");
+			strcopy(buffer, length, "Changelog: 1.3.0 Balance Changes\n \n- Increased Christian Brutal Sniper's bleed damage from 4 to 18 a tick\n- Decreased Christian Brutal Sniper's Fishwhacker damage from 390 to 300\n- Decreased Sniper Rifle damage from base 100 to 75\n ");
+		}
+		case 8:
+		{
+			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses\n ");
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses\n ");
-			page = 8;
+			strcopy(buffer, length, "Changelog: 1.3.1\n \n- Added user settings\n- Added option to disable being the boss\n- Boss selection is now saved between reconnects\n- Reduced lag with high player counts\n ");
+			page = 9;
 		}
 	}
 }
@@ -56,6 +60,12 @@ void Menu_PluginStart()
 	RegConsoleCmd("ff2next", Menu_QueueC, "See your current queue points");
 	RegConsoleCmd("vsh_next", Menu_QueueC, "See your current queue points");
 	RegConsoleCmd("vshnext", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("hale_resetpoints", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("haleresetpoints", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("ff2_resetpoints", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("ff2resetpoints", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("vsh_resetpoints", Menu_QueueC, "See your current queue points");
+	RegConsoleCmd("vshresetpoints", Menu_QueueC, "See your current queue points");
 
 	RegConsoleCmd("hale_classinfo", Menu_InfoC, "View changes to your class");
 	RegConsoleCmd("haleclassinfo", Menu_InfoC, "View changes to your class");
@@ -70,6 +80,40 @@ void Menu_PluginStart()
 	RegConsoleCmd("ff2boss", Menu_SelectC, "Select your boss");
 	RegConsoleCmd("vsh_boss", Menu_SelectC, "Select your boss");
 	RegConsoleCmd("vshboss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("hale_toggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("haletoggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("ff2_toggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("ff2toggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("vsh_toggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("vshtoggle", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("sm_setboss", Menu_SelectC, "Select your boss");
+	RegConsoleCmd("sm_boss", Menu_SelectC, "Select your boss");
+
+	RegConsoleCmd("hale_new", Menu_ChangelogC, "See the changelog");
+	RegConsoleCmd("halenew", Menu_ChangelogC, "See the changelog");
+	RegConsoleCmd("ff2_new", Menu_ChangelogC, "See the changelog");
+	RegConsoleCmd("ff2new", Menu_ChangelogC, "See the changelog");
+	RegConsoleCmd("vsh_new", Menu_ChangelogC, "See the changelog");
+	RegConsoleCmd("vshnew", Menu_ChangelogC, "See the changelog");
+
+	RegConsoleCmd("hale_music", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("halemusic", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2_music", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2music", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vsh_music", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vshmusic", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("hale_voice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("halevoice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2_voice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2voice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vsh_voice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vshvoice", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("hale_infotoggle", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("haleinfotoggle", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2_infotoggle", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("ff2infotoggle", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vsh_infotoggle", Menu_SettingsC, "Set your settings");
+	RegConsoleCmd("vshinfotoggle", Menu_SettingsC, "Set your settings");
 }
 
 /*
@@ -94,13 +138,13 @@ static void Menu_Main(int client)
 	Menu menu = new Menu(Menu_MainH);
 
 	menu.SetTitle("Versus Saxton Hale / Freak Fortress 2\n ");
-	menu.AddItem("1", "Queue Points");
-	menu.AddItem("2", "Class Changes");
-	menu.AddItem("3", "Boss Selection");
-	menu.AddItem("4", "User Settings", ITEMDRAW_DISABLED);
-	menu.AddItem("5", "Hud Settings", ITEMDRAW_DISABLED);
-	menu.AddItem("6", "Changelog");
-	menu.AddItem("7", "DISC-FF.com");
+	menu.AddItem("0", "User Settings");
+	menu.AddItem("1", "Boss Selection");
+	menu.AddItem("2", "Hud Settings", ITEMDRAW_DISABLED);
+	menu.AddItem("3", "Queue Points");
+	menu.AddItem("4", "Class Changes");
+	menu.AddItem("5", "Changelog");
+	menu.AddItem("6", "DISC-FF.com");
 
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -118,13 +162,16 @@ public int Menu_MainH(Menu menu, MenuAction action, int client, int selection)
 			switch(selection)
 			{
 				case 0:
-					Menu_Queue(client, true);
+					Menu_Settings(client, true);
 
 				case 1:
-					Menu_Info(client, true);
-
-				case 2:
 					Menu_Select(client, true);
+
+				case 3:
+					Menu_Queue(client, true);
+
+				case 4:
+					Menu_Info(client, true);
 
 				case 5:
 					Menu_Changelog(client, true);
@@ -172,6 +219,10 @@ static void Menu_Queue(int client, bool back=false)
 	else if(!Client[client].Queue)
 	{
 		menu.SetTitle("Queue Points\n \nYou have no queue points.\n ");
+	}
+	else if(Client[client].Selection == -2)
+	{
+		menu.SetTitle("Queue Points\n \nYou have %d queue points.\nYou disabled becoming the boss.\n ",  Client[client].Queue);
 	}
 	else if(GetClientTeam(client) > view_as<int>(TFTeam_Spectator))
 	{
@@ -434,15 +485,21 @@ static void Menu_Select(int client, bool back=false)
 
 	char desc[4];
 	static char name[64];
-	int i = Client[client].Selection;
-	if(i<0 || i>=MAXBOSSES || Special[i]==INVALID_FUNCTION)
+	if(Client[client].Selection == -2)
+	{
+		menu.SetTitle("Boss Selection\n \nSelection: None");
+		menu.AddItem("-1", "None", ITEMDRAW_DISABLED);
+		menu.AddItem("-1", "Random Boss");
+	}
+	else if(Client[client].Selection<0 || Client[client].Selection>=MAXBOSSES || Special[Client[client].Selection]==INVALID_FUNCTION)
 	{
 		menu.SetTitle("Boss Selection\n \nSelection: Random Boss");
+		menu.AddItem("-1", "None");
 		menu.AddItem("-1", "Random Boss", ITEMDRAW_DISABLED);
 	}
 	else
 	{
-		Call_StartFunction(null, Special[i]);
+		Call_StartFunction(null, Special[Client[client].Selection]);
 		Call_PushCell(client);
 		Call_PushStringEx(name, sizeof(name), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 		Call_PushStringEx(desc, sizeof(desc), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
@@ -450,10 +507,11 @@ static void Menu_Select(int client, bool back=false)
 		Call_Finish();
 
 		menu.SetTitle("Boss Selection\n \nSelection: %s", name);
+		menu.AddItem("-1", "None");
 		menu.AddItem("-1", "Random Boss");
 	}
 
-	for(i=0; i<MAXBOSSES; i++)
+	for(int i; i<MAXBOSSES; i++)
 	{
 		if(Special[i] == INVALID_FUNCTION)
 			continue;
@@ -488,16 +546,25 @@ public int Menu_SelectH(Menu menu, MenuAction action, int client, int selection)
 		}
 		case MenuAction_Select:
 		{
-			if(!selection)
+			switch(selection)
 			{
-				Client[client].Selection = -1;
-				Menu_Select(client, menu.ExitBackButton);
-				return;
+				case 0:
+				{
+					Client[client].Selection = -2;
+					Menu_Select(client, menu.ExitBackButton);
+				}
+				case 1:
+				{
+					Client[client].Selection = -1;
+					Menu_Select(client, menu.ExitBackButton);
+				}
+				default:
+				{
+					char buffer[4];
+					menu.GetItem(selection, buffer, sizeof(buffer));
+					Menu_Confirm(client, StringToInt(buffer), menu.ExitBackButton);
+				}
 			}
-
-			char buffer[4];
-			menu.GetItem(selection, buffer, sizeof(buffer));
-			Menu_Confirm(client, StringToInt(buffer), menu.ExitBackButton);
 		}
 	}
 }
@@ -510,7 +577,7 @@ static void Menu_Confirm(int client, int i, bool back)
 		return;
 	}
 
-	char name[4];
+	char name[64];	// TODO: Why strcopy can cause a plugin address failure
 	static char desc[512];
 	Call_StartFunction(null, Special[i]);
 	Call_PushCell(client);
@@ -548,6 +615,88 @@ public int Menu_ConfirmH(Menu menu, MenuAction action, int client, int selection
 			}
 
 			Menu_Select(client, !menu.ExitButton);
+		}
+	}
+}
+
+/*
+	User Settings
+*/
+
+public Action Menu_SettingsC(int client, int args)
+{
+	if(client)
+	{
+		Menu_Settings(client);
+	}
+	else
+	{
+		ReplyToCommand(client, "[SM] %t", "Command is in-game only");
+	}
+	return Plugin_Handled;
+}
+
+static void Menu_Settings(int client, bool back=false)
+{
+	Menu menu = new Menu(Menu_SettingsH);
+
+	menu.SetTitle("User Settings\n ");
+
+	menu.AddItem("", Client[client].NoMusic ? "Background Music [OFF]" : "Background Music [ON]");
+	menu.AddItem("", Client[client].NoVoice ? "Boss Voicelines [OFF]" : "Boss Voicelines [ON]");
+	menu.AddItem("", Client[client].NoInfo ? "Class Changes [OFF]" : "Class Changes [ON]");
+	menu.AddItem("", "Boss Ranking [OFF]", ITEMDRAW_DISABLED);
+
+	menu.ExitBackButton = back;
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_SettingsH(Menu menu, MenuAction action, int client, int selection)
+{
+	switch(action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Cancel:
+		{
+			if(selection == MenuCancel_ExitBack)
+				Menu_Main(client);
+		}
+		case MenuAction_Select:
+		{
+			switch(selection)
+			{
+				case 0:
+				{
+					if(Client[client].NoMusic)
+					{
+						Client[client].NoMusic = false;
+						Client[client].ThemeAt = 0.0;
+					}
+					else
+					{
+						Client[client].NoMusic = true;
+						Client[client].ThemeAt = FAR_FUTURE;
+						if(Client[client].Theme[0])
+						{
+							StopSound(client, SNDCHAN_STATIC, Client[client].Theme);
+							Client[client].Theme[0] = 0;
+						}
+					}
+				}
+				case 1:
+				{
+					Client[client].NoVoice = !Client[client].NoVoice;
+				}
+				case 2:
+				{
+					Client[client].NoInfo = !Client[client].NoInfo;
+				}
+			}
+
+			Menu_Settings(client, menu.ExitBackButton);
 		}
 	}
 }

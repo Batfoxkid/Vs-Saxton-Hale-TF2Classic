@@ -160,18 +160,23 @@ public Action CBS_OnVoice(int client)
 	int players;
 	int var1 = GetClientTeam(client);
 	int var2 = GetRandomInt(0, sizeof(SoundRage)-1);
-	ClientCommand(client, "playgamesound %s", SoundRage[var2]);
+	if(!Client[client].NoVoice)
+		ClientCommand(client, "playgamesound %s", SoundRage[var2]);
+
 	for(int target=1; target<=MaxClients; target++)
 	{
 		if(target==client || !IsClientInGame(target))
 			continue;
 
-		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
-		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
-		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
-
 		if(IsPlayerAlive(target) && var1!=GetClientTeam(target))
 			players++;
+
+		if(Client[target].NoVoice)
+			continue;
+
+		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+		EmitSoundToClient(target, SoundRage[var2], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
 	}
 
 	if(players > 9)
@@ -186,7 +191,7 @@ public void CBS_Intro()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", SoundIntro);
@@ -228,7 +233,7 @@ public Action CBS_Kill(int client, int victim, char[] logname, char[] iconname)
 	int sound = GetRandomInt(0, sizeof(SoundSpree)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
@@ -242,7 +247,7 @@ public Action CBS_Death(int client, int attacker, char[] logname, char[] iconnam
 	int sound = GetRandomInt(0, sizeof(SoundDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", SoundDeath[sound]);
@@ -317,15 +322,19 @@ public Action CBS_Think(int client, int &buttons)
 
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
 
-					EmitSoundToAll(SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					EmitSoundToAll(SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					for(int enemy=1; enemy<=MaxClients; enemy++)
+					for(int i=1; i<=MaxClients; i++)
 					{
-						if(enemy!=client && IsClientInGame(enemy))
-						{
-							EmitSoundToClient(enemy, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-							EmitSoundToClient(enemy, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-						}
+						if(!IsClientInGame(i) || Client[i].NoVoice)
+							continue;
+
+						EmitSoundToClient(i, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+
+						if(i == client)
+							continue;
+
+						EmitSoundToClient(i, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, SoundJump, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
 					}
 				}
 

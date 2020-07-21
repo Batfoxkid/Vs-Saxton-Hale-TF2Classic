@@ -328,15 +328,20 @@ public Action Hale_OnRage(int client)
 	int team = GetClientTeam(client);
 	bool friendlyFire = GetConVarBool(FindConVar("mp_friendlyfire"));
 	int sound = GetRandomInt(0, sizeof(HaleRage)-1);
-	ClientCommand(client, "playgamesound %s", HaleRage[sound]);
+	if(!Client[client].NoVoice)
+		ClientCommand(client, "playgamesound %s", HaleRage[sound]);
+
 	for(int target=1; target<=MaxClients; target++)
 	{
 		if(target==client || !IsClientInGame(target))
 			continue;
 
-		EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
-		EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
-		EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+		if(!Client[target].NoVoice)
+		{
+			EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+			EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+			EmitSoundToClient(target, HaleRage[sound], client, _, SNDLEVEL_TRAFFIC, _, _, _, client, position);
+		}
 
 		if(!IsPlayerAlive(target) || TF2_IsPlayerInCondition(target, TFCond_Ubercharged) || (!friendlyFire && GetClientTeam(target)==team))
 			continue;
@@ -384,7 +389,7 @@ public void Hale_Intro()
 	int sound = GetRandomInt(0, sizeof(HaleIntro)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", HaleIntro[sound]);
@@ -435,7 +440,7 @@ public Action Hale_Kill(int attacker, int client, char[] logname, char[] iconnam
 		int sound = GetRandomInt(0, sizeof(HaleKspree)-1);
 		for(int i=1; i<=MaxClients; i++)
 		{
-			if(!IsClientInGame(i))
+			if(!IsClientInGame(i) || Client[i].NoVoice)
 				continue;
 
 			ClientCommand(i, "playgamesound \"%s\"", HaleKspree[sound]);
@@ -484,11 +489,15 @@ public Action Hale_Kill(int attacker, int client, char[] logname, char[] iconnam
 			return Plugin_Changed;
 	}
 
-	ClientCommand(client, "playgamesound \"%s\"", buffer);
-	ClientCommand(client, "playgamesound \"%s\"", buffer);
+	if(!Client[client].NoVoice)
+	{
+		ClientCommand(client, "playgamesound \"%s\"", buffer);
+		ClientCommand(client, "playgamesound \"%s\"", buffer);
+	}
+
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(i==client || !IsClientInGame(i))
+		if(i==client || !IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		EmitSoundToClient(i, buffer, attacker, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, attacker, _, NULL_VECTOR, true, 0.0);
@@ -502,7 +511,7 @@ public Action Hale_Death(int client, int attacker, char[] logname, char[] iconna
 	int sound = GetRandomInt(0, sizeof(HaleDeath)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(!IsClientInGame(i))
+		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
 		ClientCommand(i, "playgamesound \"%s\"", HaleDeath[sound]);
@@ -516,8 +525,14 @@ public void Hale_Destory(int client)
 	if(GetRandomInt(0, 2))
 		return;
 
-	EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-	EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+	for(int i=1; i<=MaxClients; i++)
+	{
+		if(!IsClientInGame(i) || Client[i].NoVoice)
+			continue;
+
+		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+	}
 }
 
 public Action Hale_Think(int client, int &buttons)
@@ -576,15 +591,19 @@ public Action Hale_Think(int client, int &buttons)
 					TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, velocity);
 
 					int sound = GetRandomInt(0, sizeof(HaleJump)-1);
-					EmitSoundToAll(HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					EmitSoundToAll(HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-					for(int enemy=1; enemy<=MaxClients; enemy++)
+					for(int i=1; i<=MaxClients; i++)
 					{
-						if(enemy!=client && IsClientInGame(enemy))
-						{
-							EmitSoundToClient(enemy, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-							EmitSoundToClient(enemy, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-						}
+						if(!IsClientInGame(i) || Client[i].NoVoice)
+							continue;
+
+						EmitSoundToClient(i, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+
+						if(i == client)
+							continue;
+
+						EmitSoundToClient(i, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+						EmitSoundToClient(i, HaleJump[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
 					}
 				}
 

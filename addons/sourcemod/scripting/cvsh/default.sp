@@ -291,7 +291,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 
 				if(!(damagetype & DMG_CRIT))
 				{
-					damage *= 2.0;
+					damage *= 1.5;
 					return Plugin_Changed;
 				}
 			}
@@ -362,7 +362,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 
 				if(!(damagetype & DMG_CRIT))
 				{
-					damage *= 2.0;
+					damage *= 1.5;
 					return Plugin_Changed;
 				}
 			}

@@ -73,6 +73,9 @@ enum struct ClientEnum
 	int LastWeapon;
 
 	int Queue;
+	bool NoMusic;
+	bool NoVoice;
+	bool NoInfo;
 	int Selection;
 
 	float HudAt;
@@ -175,7 +178,7 @@ public void OnPluginStart()
 
 	LoadTranslations("common.phrases");
 
-	Cookies = new Cookie("ff2_cookies_mk2", "You joined VSH after Vagineer was made!", CookieAccess_Protected);
+	Cookies = new Cookie("ff2_cookies_mk2", "Player's Preferences", CookieAccess_Protected);
 
 	AddCommandListener(OnVoiceMenu, "voicemenu");
 	AddCommandListener(OnJoinTeam, "jointeam");
@@ -208,12 +211,12 @@ public void OnConfigsExecuted()
 {
 	FourTeams = false;
 
-	int i;
+	/*int i;
 	while((i=FindEntityByClassname(i, "tf_gamerules")) != -1)
 	{
 		FourTeams = view_as<bool>(GetEntProp(i, Prop_Send, "m_bFourTeamMode"));
 		break;
-	}
+	}*/
 
 	SetConVarBool(FindConVar("tf_arena_use_queue"), false);
 	SetConVarBool(FindConVar("tf_arena_first_blood"), false);
@@ -244,21 +247,44 @@ public void OnPluginEnd()
 public void OnClientPostAdminCheck(int client)
 {
 	Client[client].ThemeAt = GetEngineTime()+2.0;
-	Client[client].Selection = IsFakeClient(client) ? -1 : 0;
 	Client[client].Damage = 0;
 	Client[client].GlowFor = 0.0;
+
 	Hale[client].Enabled = false;
 	Hale[client].Rage = 0;
+
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-	if(!AreClientCookiesCached(client))
+
+	if(IsFakeClient(client) || !AreClientCookiesCached(client))
 	{
 		Client[client].Queue = 0;
+		Client[client].NoMusic = false;
+		Client[client].NoVoice = false;
+		Client[client].NoInfo = false;
+		Client[client].Selection = -1;
 		return;
 	}
 
-	static char buffer[8];
+	static char buffer[30];
+	char values[6][5];
 	Cookies.Get(client, buffer, sizeof(buffer));
-	Client[client].Queue = StringToInt(buffer);
+	if(strlen(buffer) < 6)	// Assume older version of cookies was used
+	{
+		Client[client].Queue = StringToInt(buffer);
+		Client[client].NoMusic = false;
+		Client[client].NoVoice = false;
+		Client[client].NoInfo = false;
+		Client[client].Selection = 0;
+		return;
+	}
+
+	ExplodeString(buffer, " ", values, sizeof(values), sizeof(values[]));
+
+	Client[client].Queue = StringToInt(values[0]);
+	Client[client].NoMusic = view_as<bool>(StringToInt(values[1]));
+	Client[client].NoVoice = view_as<bool>(StringToInt(values[2]));
+	Client[client].NoInfo = view_as<bool>(StringToInt(values[3]));
+	Client[client].Selection = StringToInt(values[5])-2;
 }
 
 public Action Command_Stun(int client, int args)
@@ -367,30 +393,30 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 
 	static char buffer[10];
 	GetCmdArg(1, buffer, sizeof(buffer));
-	if(!buffer[0])
+	if(strlen(buffer) < 3)
 		return Plugin_Continue;
 
-	if(StrEqual(buffer, "red", false) || StrEqual(buffer, "blue", false) || StrEqual(buffer, "auto", false))
+	if(StrEqual(buffer, "spectate", false))
 	{
-		if(GetClientTeam(client) <= view_as<int>(TFTeam_Spectator))
+		if(!Hale[client].Enabled && CvarSpec.BoolValue)
+			ChangeClientTeam(client, view_as<int>(TFTeam_Spectator));
+
+		return Plugin_Handled;
+	}
+
+	if(GetClientTeam(client) <= view_as<int>(TFTeam_Spectator))
+	{
+		if(Hale[client].Enabled)
 		{
-			if(Hale[client].Enabled)
-			{
-				ChangeClientTeam(client, Hale[client].Team);
-			}
-			else
-			{
-				ChangeClientTeam(client, MercTeam);
-				if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
-					SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
-			}
+			ChangeClientTeam(client, Hale[client].Team);
+			return Plugin_Handled;
 		}
+
+		ChangeClientTeam(client, MercTeam);
+		if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
+			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
 	}
-	else if(!Hale[client].Enabled && CvarSpec.BoolValue && StrEqual(buffer, "spectate", false))
-	{
-		ChangeClientTeam(client, view_as<int>(TFTeam_Spectator));
-	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action OnJoinClass(int client, const char[] command, int args)
@@ -460,7 +486,6 @@ public void OnRoundSetup(Event event, const char[] name, bool dontBroadcast)
 
 			if(Hale[i].PlayerSpawn != INVALID_FUNCTION)
 			{
-				LogMessage("%d::PlayerSpawn", i);
 				Call_StartFunction(null, Hale[i].PlayerSpawn);
 				Call_PushCell(i);
 				Call_Finish();
@@ -531,7 +556,6 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 			if(Hale[i].RoundStart == INVALID_FUNCTION)
 				continue;
 
-			LogMessage("%d::RoundStart", i);
 			Call_StartFunction(null, Hale[i].RoundStart);
 			Call_PushCell(i);
 			Call_Finish();
@@ -714,7 +738,6 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 		if(won==Hale[LeaderHale].Team && Hale[LeaderHale].RoundWin!=INVALID_FUNCTION)
 		{
-			LogMessage("%d::RoundWin", LeaderHale);
 			Call_StartFunction(null, Hale[LeaderHale].RoundWin);
 			Call_Finish();
 		}
@@ -767,7 +790,7 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	SetEntityGravity(client, 1.0);
 
 	#if defined MODULE_MENU
-	if(RoundMode!=0 || !IsVoteInProgress())
+	if(!RoundMode && !Client[client].NoInfo && !IsVoteInProgress())
 		Menu_InfoClass(client, view_as<int>(TF2_GetPlayerClass(client)));
 	#endif
 }
@@ -849,15 +872,18 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 public void OnClientDisconnect(int client)
 {
-	if(client && AreClientCookiesCached(client))
-	{
-		static char buffer[8];
-		IntToString(Client[client].Queue, buffer, sizeof(buffer));
-		Cookies.Set(client, buffer);
-	}
-
 	if(Enabled && RoundMode==1)
 		RequestFrame(CheckAlivePlayers);
+
+	if(!client || IsFakeClient(client) || !AreClientCookiesCached(client))
+		return;
+
+	if(Client[client].Queue > 999)
+		Client[client].Queue = 999;
+
+	char buffer[30];
+	FormatEx(buffer, sizeof(buffer), "%d %d %d %d 0 %d", Client[client].Queue, Client[client].NoMusic ? 1 : 0, Client[client].NoVoice ? 1 : 0, Client[client].NoInfo ? 1 : 0, Client[client].Selection+2);
+	Cookies.Set(client, buffer);
 }
 
 public Action OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -908,7 +934,6 @@ public Action OnObjectDestroyed(Event event, const char[] name, bool dontBroadca
 	if(!Hale[client].Enabled || Hale[client].MiscDestory==INVALID_FUNCTION)
 		return Plugin_Continue;
 
-	LogMessage("%d::MiscDestory", client);
 	Call_StartFunction(null, Hale[client].MiscDestory);
 	Call_PushCell(client);
 	Call_Finish();
@@ -967,7 +992,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 	if(Client[client].ThemeAt < engineTime)
 	{
-		if(FourTeams || Hale[LeaderHale].MiscTheme==INVALID_FUNCTION)
+		if(FourTeams || Client[client].NoMusic || Hale[LeaderHale].MiscTheme==INVALID_FUNCTION)
 		{
 			Client[client].ThemeAt = FAR_FUTURE;
 		}
@@ -988,17 +1013,6 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 				EmitSoundToClient(client, Client[client].Theme, _, SNDCHAN_STATIC);
 			}
 		}
-	}
-
-	if(Hale[client].Enabled && Hale[client].PlayerCommand!=INVALID_FUNCTION)
-	{
-		Call_StartFunction(null, Hale[client].PlayerCommand);
-		Call_PushCell(client);
-		Call_PushCellRef(buttons);
-
-		Action action;
-		Call_Finish(action);
-		return action;
 	}
 
 	if(Client[client].StunFor)
@@ -1038,14 +1052,31 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 
-	if(!(buttons & IN_SCORE) && Client[client].HudAt<engineTime && (alive || IsClientObserver(client)))
+	if(Hale[client].Enabled)
+	{
+		if(Hale[client].PlayerCommand == INVALID_FUNCTION)
+			return Plugin_Continue;
+
+		Call_StartFunction(null, Hale[client].PlayerCommand);
+		Call_PushCell(client);
+		Call_PushCellRef(buttons);
+
+		Action action;
+		Call_Finish(action);
+		return action;
+	}
+
+	if(Client[client].HudAt > engineTime)
+		return Plugin_Continue;
+
+	Client[client].HudAt = engineTime+HUD_INTERVAL;
+	if(!(buttons & IN_SCORE) && (alive || IsClientObserver(client)))
 	{
 		if(!FourTeams)
 		{
 			SetHudTextParams(-1.0, 0.83, HUD_INTERVAL+HUD_LINGER, 90, 255, 255, 255, 0, 0.35, 0.0, 0.1);
 			ShowSyncHudText(client, MainHud, "%s: %d HP", Hale[LeaderHale].Name, Hale[LeaderHale].Health);
 		}
-		Client[client].HudAt = engineTime+HUD_INTERVAL;
 
 		int target;
 		if(alive)
@@ -1086,13 +1117,13 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		if(AlivePlayers == 1)
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.08);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 			return Plugin_Continue;
 		}
 
 		if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.08);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 			return Plugin_Continue;
 		}
 
@@ -1104,7 +1135,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		switch(index)
 		{
 			case 0, 1, 2, 3, 5, 6, 7, 8, 32, 37, 3003, 3005, 3008:
-				TF2_AddCondition(client, TFCond_HalloweenCritCandy, 0.08);
+				TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 		}
 	}
 	return Plugin_Continue;
@@ -1201,7 +1232,7 @@ public void TF2_OnWaitingForPlayersEnd()
 			int hale, points, clients;
 			for(int i=1; i<=MaxClients; i++)
 			{
-				if(!IsClientInGame(i) || GetClientTeam(i)!=team)
+				if(!IsClientInGame(i) || Client[i].Selection==-2 || GetClientTeam(i)!=team)
 					continue;
 
 				client[clients++] = i;
@@ -1275,7 +1306,7 @@ public void TF2_OnWaitingForPlayersEnd()
 		int hale, points, clients;
 		for(int i=1; i<=MaxClients; i++)
 		{
-			if(!IsClientInGame(i) || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
+			if(!IsClientInGame(i) || Client[i].Selection==-2 || GetClientTeam(i)<=view_as<int>(TFTeam_Spectator))
 				continue;
 
 			client[clients++] = i;
@@ -1417,7 +1448,6 @@ public void CheckAlivePlayers()
 	if(last || AlivePlayers!=1 || Hale[LeaderHale].RoundLastman==INVALID_FUNCTION)
 		return;
 
-	LogMessage("%d::RoundLastman", LeaderHale);
 	Call_StartFunction(null, Hale[LeaderHale].RoundLastman);
 	Call_Finish();
 }
