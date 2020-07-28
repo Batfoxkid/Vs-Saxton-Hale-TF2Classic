@@ -305,7 +305,7 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 			}
 			case 17:	// Syringe Gun
 			{
-				int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+				int medigun = GetPlayerWeaponSlot(attacker, TFWeaponSlot_Secondary);
 				if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
 					SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
 

@@ -522,7 +522,7 @@ public Action Hale_Death(int client, int attacker, char[] logname, char[] iconna
 
 public void Hale_Destory(int client)
 {
-	if(GetRandomInt(0, 2))
+	/*if(GetRandomInt(0, 2))
 		return;
 
 	for(int i=1; i<=MaxClients; i++)
@@ -532,7 +532,7 @@ public void Hale_Destory(int client)
 
 		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
 		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-	}
+	}*/
 }
 
 public Action Hale_Think(int client, int &buttons)
@@ -791,7 +791,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 				}
 				case 17:	// Syringe Gun
 				{
-					int medigun = GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary);
+					int medigun = GetPlayerWeaponSlot(attacker, TFWeaponSlot_Secondary);
 					if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
 						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
 

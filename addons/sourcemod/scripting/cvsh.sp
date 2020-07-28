@@ -111,7 +111,7 @@ enum struct HaleEnum
 	Function RoundIntro;	// void()
 	Function RoundStart;	// void(int client)
 	Function RoundLastman;	// void()
-	Function RoundEnd;	// void(int client)
+	Function RoundEnd;	// void(int client, int team)
 	Function RoundWin;	// void()
 
 	Function PlayerSpawn;	// void(int client)
@@ -357,7 +357,7 @@ public Action Command_AddPoints(int client, int args)
 
 public Action OnVoiceMenu(int client, const char[] command, int args)
 {
-	if(!Hale[client].Enabled || !IsPlayerAlive(client))
+	if(RoundMode!=1 || !Hale[client].Enabled)
 		return Plugin_Continue;
 
 	if(Hale[client].PlayerVoice == INVALID_FUNCTION)
@@ -597,6 +597,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
+	int won = event.GetInt("team");
 	float bonusRoundTime = CvarBonus.FloatValue-0.5;
 	RoundMode = 2;
 	if(!Enabled)
@@ -626,6 +627,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				{
 					Call_StartFunction(null, Hale[i].RoundEnd);
 					Call_PushCell(i);
+					Call_PushCell(won);
 					Call_Finish();
 				}
 			}
@@ -684,6 +686,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 				{
 					Call_StartFunction(null, Hale[i].RoundEnd);
 					Call_PushCell(i);
+					Call_PushCell(won);
 					Call_Finish();
 				}
 				continue;
@@ -712,8 +715,6 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 		if(top[0] > 9000)
 			CreateTimer(1.0, WeHadToKeepThis, _, TIMER_FLAG_NO_MAPCHANGE);
-
-		int won = event.GetInt("team");
 
 		char buffer[256];
 		if(IsClientInGame(LeaderHale) && IsPlayerAlive(LeaderHale))
@@ -1047,7 +1048,9 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		Client[client].StunFor = 0.0;
 		if(alive)
 		{
-			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", Client[client].LastWeapon);
+			if(IsValidEntity(Client[client].LastWeapon))
+				SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", Client[client].LastWeapon);
+
 			SetEntPropFloat(client, Prop_Send, "m_flNextAttack", 0.0);
 		}
 	}
@@ -1117,13 +1120,13 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		if(AlivePlayers == 1)
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER+0.05);
 			return Plugin_Continue;
 		}
 
 		if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER+0.05);
 			return Plugin_Continue;
 		}
 
@@ -1465,6 +1468,11 @@ public Action OnPickup(int entity, int client)
 
 	return Plugin_Continue;
 }*/
+
+public bool TraceWallsOnly(int entity, int contentsMask)
+{
+	return false;
+}
 
 public int EmptyMenuH(Menu menu, MenuAction action, int client, int selection)
 {
