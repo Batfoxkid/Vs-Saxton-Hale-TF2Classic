@@ -793,7 +793,7 @@ public Action Hale_TakeDamage(int client, int &attacker, int &inflictor, float &
 				{
 					int medigun = GetPlayerWeaponSlot(attacker, TFWeaponSlot_Secondary);
 					if(medigun>MaxClients && IsValidEntity(medigun) && HasEntProp(medigun, Prop_Send, "m_flChargeLevel"))
-						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.01);
+						SetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel", GetEntPropFloat(medigun, Prop_Send, "m_flChargeLevel")+0.02);
 
 					if(!(damagetype & DMG_CRIT))
 					{

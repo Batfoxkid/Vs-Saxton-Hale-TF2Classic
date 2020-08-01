@@ -40,10 +40,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses\n ");
 		}
-		default:
+		case 9:
 		{
 			strcopy(buffer, length, "Changelog: 1.3.1\n \n- Added user settings\n- Added option to disable being the boss\n- Boss selection is now saved between reconnects\n- Reduced lag with high player counts\n ");
-			page = 9;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.4.0\n \n- Added Headless Horseless Horsemann Jr.\n- Fixed Syringe Guns not gaining uber on hit\n- Fixed crit-boosted weapons flickering");
+			page = 10;
 		}
 	}
 }
@@ -408,7 +412,7 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Spy\n \n- Revolver deals 50%% more damage\n- The Tranquilizer Gun doesn't slow down bosses\n- Knives don't deal critical hits\n- Backstab damage is based on boss's max health\n ");
 
 		case TFClass_Civilian:
-			menu.SetTitle("Class Changes: Civilian\n \n- Has 5%% less cash on wearer\n ");
+			menu.SetTitle("Class Changes: Civilian\n \n- 80%% less damage from fall damage\n ");
 
 		default:
 			menu.SetTitle("Class Changes: Mercenary\n \n- The Super Shotgun has 50%% more knockback\n- Flamethrower deals 100%% more damage- Airblast causes the boss to gain rage\n- Pistols deals 50%% more damage\n- This is not an easter egg\n ");

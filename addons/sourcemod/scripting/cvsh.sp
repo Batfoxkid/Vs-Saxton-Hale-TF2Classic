@@ -11,8 +11,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"3"
-#define STABLE_REVISION	"1"
+#define MINOR_REVISION	"4"
+#define STABLE_REVISION	"0"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -26,7 +26,7 @@ public Plugin myinfo =
 #define FAR_FUTURE	100000000.0
 #define PREFIX		"\x04[VSH]\x01 "
 
-#define MAXBOSSES	4
+#define MAXBOSSES	6
 
 #define CHARGE_BUTTON	IN_ATTACK2
 #define HUD_Y		0.88
@@ -585,7 +585,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 		for(int i; i<clients; i++)
 		{
 			Client[client[i]].HudAt = engineTime+10.5;
-			ShowSyncHudText(client[i], MainHud, "%N became %s\nwith %d HP", LeaderHale, Hale[LeaderHale].Name, Hale[LeaderHale].Health);
+			ShowSyncHudText(client[i], MainHud, "%N became\n%s\nwith %d HP", LeaderHale, Hale[LeaderHale].Name, Hale[LeaderHale].Health);
 		}
 	}
 
@@ -1563,6 +1563,7 @@ stock TFClassType GetClassFromName(const char[] classname)
 #include "cvsh/hale.sp"
 #tryinclude "cvsh/vagineer.sp"
 #tryinclude "cvsh/cbs.sp"
+#tryinclude "cvsh/hhh.sp"
 
 public void OnMapStart()
 {
@@ -1579,6 +1580,10 @@ public void OnMapStart()
 
 	#if defined BOSS_CBS
 	CBS_Precache(Special[2]);
+	#endif
+
+	#if defined BOSS_HHH
+	HHH_Precache(Special[3]);
 	#endif
 }
 

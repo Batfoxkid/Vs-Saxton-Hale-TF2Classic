@@ -128,7 +128,7 @@ public void CBS_Info(int client, char[] name, char[] desc, bool setup)
 	}
 	else
 	{
-		strcopy(desc, 512, "Christian Brutal Sniper\nBrave Jump: 5 sec cooldown, x1.1 height, x0.9 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\n \nRage: 2900 damage\nTimed Weapon: Up to 16 seconds\nSentry Stun: 5 seconds\n \nLoadouts: Primary & Melee\nThe Fishwhacker: Deals 100%% more damage\n ");
+		strcopy(desc, 512, "Christian Brutal Sniper\nBrave Jump: 5 sec cooldown, x1.1 height, x0.9 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\n \nRage: 2900 damage\nTimed Weapon: Up to 16 seconds\nSentry Stun: 5 seconds\n \nLoadouts: Primary & Melee\nThe Fishwhacker: Deals 50%% more damage\n ");
 	}
 }
 

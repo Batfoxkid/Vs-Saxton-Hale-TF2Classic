@@ -6,38 +6,15 @@ static const int RageDamage = 3000;
 
 static const char Downloads[][] =
 {
-	"materials/models/player/hwm_saxton_hale/saxton_belt.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_belt_high.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_belt_high.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_belt_high_normal.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_body.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_body.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_body_alt.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_body_exp.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_body_normal.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_body_saxxy.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_body_saxxy.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_hat_color.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_hat_color.vtf",
-	"materials/models/player/hwm_saxton_hale/saxton_hat_saxxy.vmt",
-	"materials/models/player/hwm_saxton_hale/saxton_hat_saxxy.vtf",
-	"materials/models/player/hwm_saxton_hale/tongue_saxxy.vmt",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head.vmt",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head.vtf",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head_exponent.vtf",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head_normal.vtf",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head_saxxy.vmt",
-	"materials/models/player/hwm_saxton_hale/hwm/saxton_head_saxxy.vtf",
-	"materials/models/player/hwm_saxton_hale/hwm/tongue.vmt",
-	"materials/models/player/hwm_saxton_hale/hwm/tongue.vtf",
-	"materials/models/player/hwm_saxton_hale/shades/eye.vtf",
-	"materials/models/player/hwm_saxton_hale/shades/eyeball_l.vmt",
-	"materials/models/player/hwm_saxton_hale/shades/eyeball_r.vmt",
-	"materials/models/player/hwm_saxton_hale/shades/eyeball_saxxy.vmt",
-	"materials/models/player/hwm_saxton_hale/shades/eye-extra.vtf",
-	"materials/models/player/hwm_saxton_hale/shades/eye-saxxy.vtf",
-	"materials/models/player/hwm_saxton_hale/shades/inv.vmt",
-	"materials/models/player/hwm_saxton_hale/shades/null.vtf",
+	"materials/models/bots/headless_hatman/headless_hatman.vmt",
+	"materials/models/bots/headless_hatman/headless_hatman.vtf",
+	"materials/models/bots/headless_hatman/headless_hatman_normal.vtf",
+	"materials/models/bots/headless_hatman/hhh_pumpkin.vmt",
+	"materials/models/player/items/all_class/pumkin_hat.vtf",
+	"materials/models/player/items/all_class/pumkin_hat_glow.vtf",
+	"materials/models/player/items/all_class/pumkin_hat_normal.vtf",
+	"materials/models/weapons/c_items/pumpkin_axe.vmt",
+	"materials/models/weapons/c_items/pumpkin_axe.vtf",
 
 	"models/player/saxton_hale/hhh_jr_mk3.dx80.vtx",
 	"models/player/saxton_hale/hhh_jr_mk3.dx90.vtx",
@@ -46,6 +23,26 @@ static const char Downloads[][] =
 	"models/player/saxton_hale/hhh_jr_mk3.vvd",
 
 	"sound/freak_fortress_2/hhh/hhh_bgm.mp3",
+	"sound/ui/halloween_boss_defeated.wav",
+	"sound/ui/halloween_boss_summoned_fx.wav",
+	"sound/vo/halloween_boss/knight_alert.wav",
+	"sound/vo/halloween_boss/knight_alert01.wav",
+	"sound/vo/halloween_boss/knight_alert02.wav",
+	"sound/vo/halloween_boss/knight_attack01.wav",
+	"sound/vo/halloween_boss/knight_attack02.wav",
+	"sound/vo/halloween_boss/knight_attack03.wav",
+	"sound/vo/halloween_boss/knight_attack04.wav",
+	"sound/vo/halloween_boss/knight_death01.wav",
+	"sound/vo/halloween_boss/knight_death02.wav",
+	"sound/vo/halloween_boss/knight_dying.wav",
+	"sound/vo/halloween_boss/knight_laugh01.wav",
+	"sound/vo/halloween_boss/knight_laugh02.wav",
+	"sound/vo/halloween_boss/knight_laugh03.wav",
+	"sound/vo/halloween_boss/knight_laugh04.wav",
+	"sound/vo/halloween_boss/knight_pain01.wav",
+	"sound/vo/halloween_boss/knight_pain02.wav",
+	"sound/vo/halloween_boss/knight_pain03.wav",
+	"sound/vo/halloween_boss/knight_spawn.wav"
 };
 
 static const char BGMusic[] = "#freak_fortress_2/hhh/hhh_bgm.mp3";
@@ -153,9 +150,10 @@ public void HHH_Info(int client, char[] name, char[] desc, bool setup)
 
 		Hale[client].PlayerTakeDamage = HHH_TakeDamage;
 
+		Hale[client].MiscTheme = HHH_Theme;
 		Hale[client].MiscDesc = HHH_Desc;
 
-		TF2_SetPlayerClass(client, HALECLASS);
+		TF2_SetPlayerClass(client, BossClass);
 	}
 	else
 	{
@@ -268,30 +266,44 @@ public Action HHH_Kill(int attacker, int client, char[] logname, char[] iconname
 	strcopy(logname, 32, "headtaker");
 	strcopy(iconname, 32, "skull_tf");
 
+	if(AlivePlayers < 2)
+		return Plugin_Continue;
+
 	float engineTime = GetEngineTime();
-	if(Hale[client].SpreeFor < engineTime)
+	if(Hale[attacker].SpreeFor < engineTime)
 	{
-		Hale[client].SpreeNext = false;
-		Hale[client].SpreeFor = engineTime+4.0;
-		return Plugin_Changed;
+		Hale[attacker].SpreeNext = false;
+		Hale[attacker].SpreeFor = engineTime+4.0;
+	}
+	else
+	{
+		Hale[attacker].SpreeFor = engineTime+4.0;
+		if(Hale[attacker].SpreeNext)
+		{
+			Hale[attacker].SpreeFor = 0.0;
+			int sound = GetRandomInt(0, sizeof(SoundSpree)-1);
+			for(int i=1; i<=MaxClients; i++)
+			{
+				if(!IsClientInGame(i) || Client[i].NoVoice)
+					continue;
+
+				ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
+				ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
+			}
+			return Plugin_Changed;
+		}
+
+		Hale[attacker].SpreeNext = true;
 	}
 
-	Hale[client].SpreeFor = engineTime+4.0;
-	if(!Hale[client].SpreeNext)
-	{
-		Hale[client].SpreeNext = true;
-		return Plugin_Changed;
-	}
-
-	Hale[client].SpreeFor = 0.0;
-	int sound = GetRandomInt(0, sizeof(SoundSpree)-1);
+	int sound = GetRandomInt(0, sizeof(SoundKill)-1);
 	for(int i=1; i<=MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
-		ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
-		ClientCommand(i, "playgamesound \"%s\"", SoundSpree[sound]);
+		EmitSoundToClient(i, SoundKill[sound], attacker, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, attacker, _, NULL_VECTOR, true, 0.0);
+		EmitSoundToClient(i, SoundKill[sound], attacker, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, attacker, _, NULL_VECTOR, true, 0.0);
 	}
 	return Plugin_Changed;
 }
@@ -339,35 +351,40 @@ public Action HHH_Think(int client, int &buttons)
 	{
 		if(Hale[client].JumpChargeFrom)
 		{
+			chargePercent = fmin((engineTime - Hale[client].JumpChargeFrom) / 3.0, 1.0) * 100.0;
+
 			// has key been released?
-			if(!(buttons & CHARGE_BUTTON) && (Hale[client].JumpDuper || Hale[client].JumpChargeFrom>engineTime+3.0))
+			if(!(buttons & CHARGE_BUTTON))
 			{
-				// is user's eye angle valid? if so, perform the jump
-				GetClientEyeAngles(client, eyeAngles);
-				if(eyeAngles[0] <= JUMP_TELEPORT_MAX_ANGLE)
+				if(Hale[client].JumpDuper || chargePercent>99)
 				{
-					if(TeleportToPlayer(client, Hale[client].JumpDuper ? 4.0 : 2.5))
+					// is user's eye angle valid? if so, perform the jump
+					GetClientEyeAngles(client, eyeAngles);
+					if(eyeAngles[0] <= JUMP_TELEPORT_MAX_ANGLE)
 					{
-						// unlike the original, I'm managing cooldown myself. so lets do it now.
-						Hale[client].JumpReadyAt = engineTime+20.0;
-
-						// emergency teleport no longer needs to be ready
-						Hale[client].JumpDuper = false;
-
-						int sound = GetRandomInt(0, sizeof(SoundTele)-1);
-						for(int i=1; i<=MaxClients; i++)
+						if(TeleportToPlayer(client, engineTime+(Hale[client].JumpDuper ? 4.0 : 2.5)))
 						{
-							if(!IsClientInGame(i) || Client[i].NoVoice)
-								continue;
+							// unlike the original, I'm managing cooldown myself. so lets do it now.
+							Hale[client].JumpReadyAt = engineTime+20.0;
 
-							EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-							EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+							// emergency teleport no longer needs to be ready
+							Hale[client].JumpDuper = false;
 
-							if(i == client)
-								continue;
+							int sound = GetRandomInt(0, sizeof(SoundTele)-1);
+							for(int i=1; i<=MaxClients; i++)
+							{
+								if(!IsClientInGame(i) || Client[i].NoVoice)
+									continue;
 
-							EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
-							EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, position, NULL_VECTOR, true, 0.0);
+								EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+								EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+
+								if(i == client)
+									continue;
+
+								EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+								EmitSoundToClient(i, SoundTele[sound], client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+							}
 						}
 					}
 				}
@@ -636,17 +653,24 @@ public void HHH_Win()
 	}
 }
 
+public void HHH_Theme(int client)
+{
+	strcopy(Client[client].Theme, sizeof(Client[].Theme), BGMusic);
+	Client[client].ThemeAt = GetEngineTime()+87.0;
+	PrintToChat(client, "%sNow Playing: Valve Studio Orchestra - Haunted Fortress 2", PREFIX);
+}
+
 public void HHH_Desc(int client, char[] buffer)
 {
-	strcopy(buffer, 512, "Saxton Hale\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nAnchor: Hold DUCK on the ground\nStun: Call for a medic when rage is ready\n ");
+	strcopy(buffer, 512, "Horseless Headless Horsemann Jr.\n \nTeleportation: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nStun: Call for a medic when rage is ready\nHeavyweight: You get knockback resistance");
 }
 
 // Dynamic Defaults FF2
 bool TeleportToPlayer(int clientIdx, float stunTime=0.0, bool tryAbove=true, bool trySide=true, bool sameTeam=false, bool reverseTeleport=false)
 {
 	// teleport code, which only uses light sprinkles of the original
-	int target = FindRandomPlayer(GetClientTeam(clientIdx) == BossTeam ? sameTeam : !sameTeam, NULL_VECTOR, 0.0, false, clientIdx, true);
-	if (IsLivingPlayer(target))
+	int target = FindRandomPlayer(GetClientTeam(clientIdx) == BossTeam ? sameTeam : !sameTeam, false, clientIdx);
+	if (target)
 	{
 		// the rare practical use for an xor swap :p
 		if (reverseTeleport)
@@ -692,11 +716,11 @@ bool TeleportToPlayer(int clientIdx, float stunTime=0.0, bool tryAbove=true, boo
 		// stun before teleport
 		if (stunTime > 0.0)
 		{
-			Client[target].LastWeapon = GetEntPropEnt(target, Prop_Send, "m_hActiveWeapon");
-			Client[target].StunFor = stunTime;
+			Client[clientIdx].LastWeapon = GetPlayerWeaponSlot(clientIdx, TFWeaponSlot_Melee);
+			Client[clientIdx].StunFor = stunTime;
 
-			SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", -1);
-			SetEntPropFloat(client, Prop_Send, "m_flNextAttack", FAR_FUTURE);
+			SetEntPropEnt(clientIdx, Prop_Send, "m_hActiveWeapon", -1);
+			SetEntPropFloat(clientIdx, Prop_Send, "m_flNextAttack", FAR_FUTURE);
 		}
 
 		// now, teleport!
@@ -749,4 +773,68 @@ static bool TestTeleportLocation(int clientIdx, float origin[3], float targetPos
 	
 	// success!
 	return GetVectorDistance(targetPos, endPos, true)<GetVectorDistance(targetPos, pitFailPos, true);
+}
+
+// TODO: Update this code
+static int FindRandomPlayer(bool isBossTeam, bool anyTeam=false, int exclude=0)
+{
+	int player = 0;
+	// first, get a player count for the team we care about
+	int playerCount = 0;
+	for (int clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
+	{
+		if (clientIdx == exclude)
+			continue;
+	
+		if (!IsClientInGame(clientIdx) || !IsPlayerAlive(clientIdx))
+			continue;
+			
+		//if (maxDistance > 0.0 && !IsPlayerInRange(clientIdx, position, maxDistance))
+			//continue;
+			
+		if (exclude>0 && GetEntPropFloat(exclude, Prop_Send, "m_flModelScale")>GetEntPropFloat(clientIdx, Prop_Send, "m_flModelScale"))
+			continue;
+
+		if (anyTeam || (isBossTeam && GetClientTeam(clientIdx) == BossTeam) || (!isBossTeam && GetClientTeam(clientIdx) != BossTeam))
+			playerCount++;
+	}
+
+	// ensure there's at least one living valid player
+	if (playerCount <= 0)
+		return -1;
+
+	// now randomly choose our victim
+	int rand = GetRandomInt(0, playerCount - 1);
+	playerCount = 0;
+	for (int clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
+	{
+		if (clientIdx == exclude)
+			continue;
+	
+		if (!IsClientInGame(clientIdx) || !IsPlayerAlive(clientIdx))
+			continue;
+
+		//if (maxDistance > 0.0 && !IsPlayerInRange(clientIdx, position, maxDistance))
+			//continue;
+			
+		if (exclude>0 && GetEntPropFloat(exclude, Prop_Send, "m_flModelScale")>GetEntPropFloat(clientIdx, Prop_Send, "m_flModelScale"))
+			continue;
+
+		if (anyTeam || (isBossTeam && GetClientTeam(clientIdx) == BossTeam) || (!isBossTeam && GetClientTeam(clientIdx) != BossTeam))
+		{
+			if (playerCount == rand) // needed if rand is 0
+			{
+				player = clientIdx;
+				break;
+			}
+			playerCount++;
+			if (playerCount == rand) // needed if rand is playerCount - 1, executes for all others except 0
+			{
+				player = clientIdx;
+				break;
+			}
+		}
+	}
+	
+	return player;
 }
