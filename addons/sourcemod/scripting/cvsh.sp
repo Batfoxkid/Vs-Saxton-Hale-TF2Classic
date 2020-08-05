@@ -255,7 +255,7 @@ public void OnClientPostAdminCheck(int client)
 	Hale[client].Rage = 0;
 
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-	SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);
+	//SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);
 
 	if(IsFakeClient(client) || !AreClientCookiesCached(client))
 	{

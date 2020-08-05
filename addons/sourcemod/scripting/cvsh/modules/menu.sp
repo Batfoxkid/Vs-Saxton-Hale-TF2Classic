@@ -50,7 +50,7 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.4.1\n \n- Added max health for bosses\n- Added wall climb for Snipers and Headless Horseless Horsemann Jr.\n - Bosses can now use any teleporter\n- Fixed 9001 easter egg not playing");
+			strcopy(buffer, length, "Changelog: 1.4.1\n \n\n- Added wall climb for Snipers and Headless Horseless Horsemann Jr.\n- Bosses can now use any teleporter\n- Fixed 9001 easter egg not playing");
 			page = 11;
 		}
 	}
