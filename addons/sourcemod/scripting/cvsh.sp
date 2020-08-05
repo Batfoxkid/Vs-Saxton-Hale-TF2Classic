@@ -985,7 +985,7 @@ public void TF2_OnConditionRemoved(int client, TFCond cond)
 
 public Action TF2_OnPlayerTeleport(int client, int entity, bool &result)
 {
-	if(!Hale[client].Enabled)
+	if(client<1 || client>MaxClients || !Hale[client].Enabled)
 		return Plugin_Continue;
 
 	result = true;
