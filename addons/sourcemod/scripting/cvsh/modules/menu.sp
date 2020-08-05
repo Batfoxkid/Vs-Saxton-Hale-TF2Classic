@@ -6,48 +6,52 @@ static void Changelog(int &page, char[] buffer, int length)
 	{
 		case 0:
 		{
-			strcopy(buffer, length, "Changelog: 1.0.0\n \n- Added Vagineer\n ");
+			strcopy(buffer, length, "Changelog: 1.0.0\n \n- Added Vagineer");
 		}
 		case 1:
 		{
-			strcopy(buffer, length, "Changelog: 1.0.1\n \n- Fixed bosses not being able to see the top damage hud\n ");
+			strcopy(buffer, length, "Changelog: 1.0.1\n \n- Fixed bosses not being able to see the top damage hud");
 		}
 		case 2:
 		{
-			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once\n ");
+			strcopy(buffer, length, "Changelog: 1.1.0 Fixes\n \n- Fixed bosses not being able to suicide after the round ended\n- Spectators now see the intro hud\n- Fixed Vagineer saying lastman and kill streak sounds at once");
 		}
 		case 3:
 		{
-			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700\n ");
+			strcopy(buffer, length, "Changelog: 1.1.0 Changes\n \n- Added Christian Brutal Sniper\n- Decreased Vagineer's damage to full rage from 2800 to 2700");
 		}
 		case 4:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\n- Flaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper\n ");
+			strcopy(buffer, length, "Changelog: 1.2.0 Balance Changes\n \n- Airblasts now give rage\n- Sniper Rifles now outline bosses\n- Flaregun now gains critical damage bonus\n- Decreased Christian Brutal Sniper's jump cooldown\n- Removed scopes for Christian Brutal Sniper");
 		}
 		case 5:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.0 Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info\n ");
+			strcopy(buffer, length, "Changelog: 1.2.0 Features\n \n- Added the main menu\n- Added queue point info\n- Added class change info");
 		}
 		case 6:
 		{
-			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Added boss selection\n- Fixed Gunboats not giving fall damage resistance\n- Fixed bosses not gaining extra hazard jump height\n- Removed first arena round\n ");
+			strcopy(buffer, length, "Changelog: 1.2.1\n \n- Added boss selection\n- Fixed Gunboats not giving fall damage resistance\n- Fixed bosses not gaining extra hazard jump height\n- Removed first arena round");
 		}
 		case 7:
 		{
-			strcopy(buffer, length, "Changelog: 1.3.0 Balance Changes\n \n- Increased Christian Brutal Sniper's bleed damage from 4 to 18 a tick\n- Decreased Christian Brutal Sniper's Fishwhacker damage from 390 to 300\n- Decreased Sniper Rifle damage from base 100 to 75\n ");
+			strcopy(buffer, length, "Changelog: 1.3.0 Balance Changes\n \n- Increased Christian Brutal Sniper's bleed damage from 4 to 18 a tick\n- Decreased Christian Brutal Sniper's Fishwhacker damage from 390 to 300\n- Decreased Sniper Rifle damage from base 100 to 75");
 		}
 		case 8:
 		{
-			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses\n ");
+			strcopy(buffer, length, "Changelog: 1.3.0 Features\n \n- Added four-team boss vs boss mode\n- Added a changelog\n- Fixed critical hits not outlining bosses");
 		}
 		case 9:
 		{
-			strcopy(buffer, length, "Changelog: 1.3.1\n \n- Added user settings\n- Added option to disable being the boss\n- Boss selection is now saved between reconnects\n- Reduced lag with high player counts\n ");
+			strcopy(buffer, length, "Changelog: 1.3.1\n \n- Added user settings\n- Added option to disable being the boss\n- Boss selection is now saved between reconnects\n- Reduced lag with high player counts");
+		}
+		case 10:
+		{
+			strcopy(buffer, length, "Changelog: 1.4.0\n \n- Added Headless Horseless Horsemann Jr.\n- Fixed Syringe Guns not gaining uber on hit\n- Fixed crit-boosted weapons flickering");
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.4.0\n \n- Added Headless Horseless Horsemann Jr.\n- Fixed Syringe Guns not gaining uber on hit\n- Fixed crit-boosted weapons flickering");
-			page = 10;
+			strcopy(buffer, length, "Changelog: 1.4.1\n \n- Added max health for bosses\n- Added wall climb for Snipers and Headless Horseless Horsemann Jr.\n - Bosses can now use any teleporter\n- Fixed 9001 easter egg not playing");
+			page = 11;
 		}
 	}
 }
@@ -734,7 +738,7 @@ static void Menu_Changelog(int client, bool back=false, int page=-1)
 
 	static char buffer[512];
 	Changelog(page, buffer, sizeof(buffer));
-	menu.SetTitle(buffer);
+	menu.SetTitle("%s\n", buffer);
 
 	IntToString(page, buffer, sizeof(buffer));
 	if(back)

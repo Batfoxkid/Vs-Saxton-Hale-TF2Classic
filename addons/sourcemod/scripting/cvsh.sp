@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"4"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -118,6 +118,7 @@ enum struct HaleEnum
 	Function PlayerSound;	// Action(int clients[MAXPLAYERS], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 	Function PlayerVoice;	// void(int client)
 	Function PlayerCommand;	// void(int client, int &buttons)
+	Function PlayerAttack;	// Action(int client, int weapon, char[] weaponname, bool &result)
 
 	Function PlayerKill;	// Action(int client, int victim, char[] logname, char[] iconname)
 	Function PlayerDeath;	// Action(int client, int attacker, char[] logname, char[] iconname)
@@ -254,6 +255,7 @@ public void OnClientPostAdminCheck(int client)
 	Hale[client].Rage = 0;
 
 	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	SDKHook(client, SDKHook_GetMaxHealth, OnGetMaxHealth);
 
 	if(IsFakeClient(client) || !AreClientCookiesCached(client))
 	{
@@ -413,8 +415,8 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 		}
 
 		ChangeClientTeam(client, MercTeam);
-		if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
-			SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+		//if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
+			//SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
 	}
 	return Plugin_Continue;
 }
@@ -713,7 +715,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			}
 		}
 
-		if(top[0] > 9000)
+		if(Client[top[0]].Damage > 9000)
 			CreateTimer(1.0, WeHadToKeepThis, _, TIMER_FLAG_NO_MAPCHANGE);
 
 		char buffer[256];
@@ -981,6 +983,50 @@ public void TF2_OnConditionRemoved(int client, TFCond cond)
 		TF2_AddCondition(client, TFCond_CritCanteen, 4.0);
 }
 
+public Action TF2_OnPlayerTeleport(int client, int entity, bool &result)
+{
+	if(!Hale[client].Enabled)
+		return Plugin_Continue;
+
+	result = true;
+	return Plugin_Changed;
+}
+
+public Action TF2_CalcIsAttackCritical(int client, int weapon, const char[] classname, bool &result)
+{
+	if(!Enabled || RoundMode!=1)
+		return Plugin_Continue;
+
+	if(Hale[client].Enabled)
+	{
+		if(Hale[client].PlayerAttack == INVALID_FUNCTION)
+		{
+			if(result && GetRandomInt(0, 6))
+			{
+				result = false;
+				return Plugin_Changed;
+			}
+		}
+		else
+		{
+			Call_StartFunction(null, Hale[client].PlayerAttack);
+			Call_PushCell(client);
+			Call_PushCell(weapon);
+			Call_PushString(classname/*, 64, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK*/);
+			Call_PushCellRef(result);
+
+			Action action;
+			Call_Finish(action);
+			return action;
+		}
+	}
+	else if(!StrContains(classname, "tf_weapon_club"))
+	{
+		SickleClimbWalls(client, weapon);
+	}
+	return Plugin_Continue;
+}
+
 public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if(!Enabled || RoundMode!=1)
@@ -1207,6 +1253,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		}
 	}
 	return changed ? Plugin_Changed : Plugin_Continue;
+}
+
+public Action OnGetMaxHealth(int client, int &health)
+{
+	if(!Hale[client].Enabled)
+		return Plugin_Continue;
+
+	health = Hale[client].MaxHealth;
+	return Plugin_Changed;
 }
 
 public Action OnRoundPre(Handle timer)
@@ -1474,6 +1529,11 @@ public bool TraceWallsOnly(int entity, int contentsMask)
 	return false;
 }
 
+public bool TraceRayDontHitSelf(int entity, int mask, any data)
+{
+	return (entity != data);
+}
+
 public int EmptyMenuH(Menu menu, MenuAction action, int client, int selection)
 {
 	if(action == MenuAction_End)
@@ -1555,6 +1615,63 @@ stock TFClassType GetClassFromName(const char[] classname)
 	return TFClass_Unknown;
 }
 
+stock void SickleClimbWalls(int client, int weapon)
+{
+	if(!Hale[client].Enabled && GetClientHealth(client)<16)
+		return;
+
+	static float pos[3], ang[3];
+	GetClientEyePosition(client, pos);	// Get the position of the player's eyes
+	GetClientEyeAngles(client, ang);	// Get the angle the player is looking
+
+	//Check for colliding entities
+	TR_TraceRayFilter(pos, ang, MASK_PLAYERSOLID, RayType_Infinite, TraceRayDontHitSelf, client);
+	if(!TR_DidHit(INVALID_HANDLE))
+		return;
+
+	static char classname[64];
+	GetEdictClassname(TR_GetEntityIndex(INVALID_HANDLE), classname, sizeof(classname));
+	if(!StrEqual(classname, "worldspawn"))
+		return;
+
+	TR_GetPlaneNormal(INVALID_HANDLE, ang);
+	GetVectorAngles(ang, ang);
+
+	if(ang[0]>30.0 && ang[0]<330.0)
+		return;
+
+	if(ang[0]<-30.0)
+		return;
+
+	TR_GetEndPosition(ang);
+	if(GetVectorDistance(pos, ang) > 100.0)
+		return;
+
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", ang);
+	ang[0] /= 2.0;
+	ang[1] /= 2.0;
+	ang[2] = 600.0;
+	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, ang);
+
+	if(Hale[client].Enabled)
+		return;
+
+	SDKHooks_TakeDamage(client, client, client, 15.0, DMG_CLUB, 0);
+	ClientCommand(client, "playgamesound \"%s\"", "player\\taunt_clip_spin.wav");
+	RequestFrame(Timer_NoAttacking, EntIndexToEntRef(weapon));
+}
+
+public void Timer_NoAttacking(int ref)
+{
+	int weapon = EntRefToEntIndex(ref);
+	if(weapon<=MaxClients || !IsValidEntity(weapon))
+		return;
+
+	float next = GetGameTime()+1.56;
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", next);
+	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
+}
+
 /*
 	Setup Hale Files Here
 */
@@ -1599,6 +1716,7 @@ void SetupHale(int client)
 	Hale[client].PlayerSound = INVALID_FUNCTION;
 	Hale[client].PlayerVoice = INVALID_FUNCTION;
 	Hale[client].PlayerCommand = INVALID_FUNCTION;
+	Hale[client].PlayerAttack = INVALID_FUNCTION;
 
 	Hale[client].PlayerKill = INVALID_FUNCTION;
 	Hale[client].PlayerDeath = INVALID_FUNCTION;

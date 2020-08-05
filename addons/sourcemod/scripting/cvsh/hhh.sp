@@ -144,6 +144,7 @@ public void HHH_Info(int client, char[] name, char[] desc, bool setup)
 		Hale[client].PlayerSound = Default_Sound;
 		Hale[client].PlayerVoice = HHH_OnRage;
 		Hale[client].PlayerCommand = HHH_Think;
+		Hale[client].PlayerAttack = HHH_Attack;
 
 		Hale[client].PlayerKill = HHH_Kill;
 		Hale[client].PlayerDeath = HHH_Death;
@@ -334,6 +335,11 @@ public void HHH_RoundEnd(int client, int team)
 		ClientCommand(i, "playgamesound \"%s\"", SoundLose);
 		ClientCommand(i, "playgamesound \"%s\"", SoundLose);
 	}
+}
+
+public Action HHH_Attack(int client, int weapon, const char[] classname, bool &result)
+{
+	SickleClimbWalls(client, weapon);
 }
 
 public Action HHH_Think(int client, int &buttons)
