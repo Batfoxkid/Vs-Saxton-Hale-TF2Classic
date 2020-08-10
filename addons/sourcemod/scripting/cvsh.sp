@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"4"
-#define STABLE_REVISION	"1"
+#define STABLE_REVISION	"2"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -222,7 +222,6 @@ public void OnConfigsExecuted()
 	SetConVarBool(FindConVar("tf_arena_use_queue"), false);
 	SetConVarBool(FindConVar("tf_arena_first_blood"), false);
 	SetConVarBool(FindConVar("mp_forcecamera"), false);
-	SetConVarInt(FindConVar("tf_weapon_criticals_melee"), 0);
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
 	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
@@ -745,6 +744,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			Call_Finish();
 		}
 
+		bool less = top[2]<1;
 		SetHudTextParams(-1.0, 0.25, bonusRoundTime, 255, 255, 255, 255);
 		for(int i; i<clients; i++)
 		{
@@ -752,7 +752,7 @@ public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
 			{
 				ShowSyncHudText(client[i], MainHud, "%s\n \n%s", buffer, won==Hale[client[i]].Team ? "Congratulations! You won!" : "Oh no, you lost!\nDon't worry, there's always next time");
 			}
-			else if(top[2] < 1)
+			else if(less)
 			{
 				ShowSyncHudText(client[i], MainHud, buffer);
 			}
@@ -1681,6 +1681,7 @@ public void Timer_NoAttacking(int ref)
 #tryinclude "cvsh/vagineer.sp"
 #tryinclude "cvsh/cbs.sp"
 #tryinclude "cvsh/hhh.sp"
+#tryinclude "cvsh/buffvilian.sp"
 
 public void OnMapStart()
 {
@@ -1701,6 +1702,10 @@ public void OnMapStart()
 
 	#if defined BOSS_HHH
 	HHH_Precache(Special[3]);
+	#endif
+
+	#if defined BOSS_JOKE
+	Joke_Precache(Special[5]);
 	#endif
 }
 

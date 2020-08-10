@@ -408,7 +408,7 @@ public void Vag_Lastman()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientInGame(i) || Client[i].NoVoice)
+		if(IsClientInGame(i) && Client[i].NoVoice)
 			ClientCommand(i, "playgamesound \"%s\"", VAGLAST);
 	}
 }
@@ -417,7 +417,7 @@ public void Vag_Win()
 {
 	for(int i=1; i<=MaxClients; i++)
 	{
-		if(IsClientInGame(i) || Client[i].NoVoice)
+		if(IsClientInGame(i) && Client[i].NoVoice)
 			ClientCommand(i, "playgamesound \"%s\"", VAGWIN);
 	}
 }

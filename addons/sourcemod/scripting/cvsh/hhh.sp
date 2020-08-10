@@ -668,7 +668,7 @@ public void HHH_Theme(int client)
 
 public void HHH_Desc(int client, char[] buffer)
 {
-	strcopy(buffer, 512, "Horseless Headless Horsemann Jr.\n \nTeleportation: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nStun: Call for a medic when rage is ready\nHeavyweight: You get knockback resistance");
+	strcopy(buffer, 512, "Horseless Headless Horsemann Jr.\n \nTeleportation: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nStun: Call for a medic when rage is ready\nHeavyweight: You get knockback resistance\n ");
 }
 
 // Dynamic Defaults FF2

@@ -48,10 +48,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.4.0\n \n- Added Headless Horseless Horsemann Jr.\n- Fixed Syringe Guns not gaining uber on hit\n- Fixed crit-boosted weapons flickering");
 		}
-		default:
+		case 11:
 		{
 			strcopy(buffer, length, "Changelog: 1.4.1\n \n\n- Added wall climb for Snipers and Headless Horseless Horsemann Jr.\n- Bosses can now use any teleporter\n- Fixed 9001 easter egg not playing");
-			page = 11;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman");
+			page = 12;
 		}
 	}
 }
