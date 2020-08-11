@@ -54,7 +54,7 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman");
+			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman\n-Fixed Snipers not being able to wall climb");
 			page = 12;
 		}
 	}

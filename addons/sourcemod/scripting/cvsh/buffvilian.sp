@@ -1,7 +1,8 @@
 #define BOSS_JOKE 6
 
 static const char BossModel[] = "models/player/buffvilian.mdl";
-static const TFClassType BossClass = TFClass_Heavy;
+static const TFClassType BossClass = TFClass_Civilian;
+static const TFClassType BossWeapon = TFClass_Heavy;
 static const int RageDamage = 2800;
 
 static const char Downloads[][] =
@@ -50,7 +51,7 @@ public void Joke_Info(int client, char[] name, char[] desc, bool setup)
 
 		Hale[client].MiscDesc = Joke_Desc;
 
-		TF2_SetPlayerClass(client, BossClass);
+		TF2_SetPlayerClass(client, BossWeapon);
 	}
 	else
 	{
@@ -60,7 +61,6 @@ public void Joke_Info(int client, char[] name, char[] desc, bool setup)
 
 public void Joke_RoundStart(int client)
 {
-	TF2_SetPlayerClass(client, BossClass);
 	Joke_Spawn(client);
 }
 
@@ -117,6 +117,8 @@ public Action Joke_OnRage(int client)
 
 public void Joke_Spawn(int client)
 {
+	TF2_SetPlayerClass(client, BossClass);
+
 	SetVariantString(BossModel);
 	AcceptEntityInput(client, "SetCustomModel");
 	SetEntProp(client, Prop_Send, "m_bUseClassAnimations", 1);
@@ -130,11 +132,17 @@ public void Joke_Spawn(int client)
 	TF2_AddCondition(client, TFCond_RestrictToMelee);
 }
 
-public Action Joke_Sound(int clients[64], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+public Action Joke_Sound(int clients[MAXPLAYERS], int &numClients, char sound[PLATFORM_MAX_PATH], int &client, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
 	if(channel!=SNDCHAN_VOICE && !(channel==SNDCHAN_STATIC && !StrContains(sound, "vo")))
 		return Plugin_Continue;
 
+	static float delay[MAXPLAYERS+1];
+	float time = GetGameTime();
+	if(delay[client] > time)
+		return Plugin_Stop;
+		
+	delay[client] = time+1.0;
 	for(int i=1; i<=MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || Client[i].NoVoice)
@@ -162,7 +170,6 @@ public Action Joke_Think(int client, int &buttons)
 	}
 
 	static float eyeAngles[3];
-	bool blockAlt;
 	float engineTime = GetEngineTime();
 	float chargePercent = 0.0;
 	if(Hale[client].JumpReadyAt < engineTime)
@@ -172,11 +179,7 @@ public Action Joke_Think(int client, int &buttons)
 			chargePercent = fmin((engineTime - Hale[client].JumpChargeFrom) / 1.5, 1.0) * 100.0;
 
 			// has key been released?
-			if(buttons & CHARGE_BUTTON)
-			{
-				blockAlt = true;
-			}
-			else 
+			if(!(buttons & CHARGE_BUTTON))
 			{
 				// is user's eye angle valid? if so, perform the jump
 				GetClientEyeAngles(client, eyeAngles);
@@ -279,7 +282,7 @@ public Action Joke_Think(int client, int &buttons)
 		}
 	}
 
-	if(!blockAlt)
+	if(!(buttons & IN_ATTACK2))
 		return Plugin_Continue;
 
 	buttons &= ~IN_ATTACK2;
