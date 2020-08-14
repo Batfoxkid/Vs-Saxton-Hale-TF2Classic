@@ -339,7 +339,9 @@ public void HHH_RoundEnd(int client, int team)
 
 public Action HHH_Attack(int client, int weapon, const char[] classname, bool &result)
 {
+	result = false;
 	SickleClimbWalls(client, weapon);
+	return Plugin_Changed;
 }
 
 public Action HHH_Think(int client, int &buttons)

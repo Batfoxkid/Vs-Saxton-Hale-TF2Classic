@@ -234,10 +234,12 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 
 		EmitSoundToClient(client, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
 		EmitSoundToClient(attacker, "player/crit_received3.wav", _, _, _, _, 0.7, _, _, _, _, false);
-		SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime()+1.5);
+
+		float gameTime = GetGameTime();
+		SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", gameTime+1.5);
 		SetEntProp(weapon, Prop_Send, "m_bLandedCrit", 1);
-		SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", GetGameTime()+1.5);
-		SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", GetGameTime()+1.0);
+		SetEntPropFloat(attacker, Prop_Send, "m_flNextAttack", gameTime+1.5);
+		SetEntPropFloat(attacker, Prop_Send, "m_flStealthNextChangeTime", gameTime+1.0);
 
 		PrintHintText(attacker, "You backstabed %s!", Hale[client].Name);
 		PrintHintText(client, "You got backstabed by %N!", attacker);

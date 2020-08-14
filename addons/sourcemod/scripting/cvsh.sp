@@ -11,8 +11,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"4"
-#define STABLE_REVISION	"2"
+#define MINOR_REVISION	"5"
+#define STABLE_REVISION	"0"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -1217,15 +1217,6 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 		changed = action!=Plugin_Continue;
 	}
 
-	if((damagetype & DMG_FALL) && (attacker<1 || client==attacker))
-	{
-		if(GetPlayerWeaponSlot(client, TFWeaponSlot_Primary)==-1 || GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)==-1)
-		{
-			damage /= 5.0;
-			return Plugin_Changed;
-		}
-	}
-
 	if(attacker>0 && attacker<=MaxClients && Hale[attacker].Enabled)
 	{
 		if(Hale[attacker].PlayerDealDamage != INVALID_FUNCTION)
@@ -1252,6 +1243,15 @@ public Action OnTakeDamage(int client, int &attacker, int &inflictor, float &dam
 			changed = true;
 		}
 	}
+	else if((damagetype & DMG_FALL) && (attacker<1 || client==attacker))
+	{
+		if(GetPlayerWeaponSlot(client, TFWeaponSlot_Primary)==-1 || GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)==-1)
+		{
+			damage /= 5.0;
+			changed = true;
+		}
+	}
+
 	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
@@ -1681,6 +1681,7 @@ public void Timer_NoAttacking(int ref)
 #tryinclude "cvsh/vagineer.sp"
 #tryinclude "cvsh/cbs.sp"
 #tryinclude "cvsh/hhh.sp"
+#tryinclude "cvsh/easter.sp"
 #tryinclude "cvsh/buffvilian.sp"
 
 public void OnMapStart()
@@ -1702,6 +1703,10 @@ public void OnMapStart()
 
 	#if defined BOSS_HHH
 	HHH_Precache(Special[3]);
+	#endif
+
+	#if defined BOSS_EASTER
+	Easter_Precache(Special[3]);
 	#endif
 
 	#if defined BOSS_JOKE

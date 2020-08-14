@@ -52,10 +52,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.4.1\n \n\n- Added wall climb for Snipers and Headless Horseless Horsemann Jr.\n- Bosses can now use any teleporter\n- Fixed 9001 easter egg not playing");
 		}
-		default:
+		case 12:
 		{
 			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman\n-Fixed Snipers not being able to wall climb");
-			page = 12;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.5.0\n \n\n- Added Easter Bunny\n-Removed Headless Horseless Horsemann Jr's random crits\n- Fixed Henchman being silent");
+			page = 13;
 		}
 	}
 }

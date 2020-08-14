@@ -1,8 +1,7 @@
 #define BOSS_JOKE 6
 
 static const char BossModel[] = "models/player/buffvilian.mdl";
-static const TFClassType BossClass = TFClass_Civilian;
-static const TFClassType BossWeapon = TFClass_Heavy;
+static const TFClassType BossClass = TFClass_Heavy;
 static const int RageDamage = 2800;
 
 static const char Downloads[][] =
@@ -51,7 +50,7 @@ public void Joke_Info(int client, char[] name, char[] desc, bool setup)
 
 		Hale[client].MiscDesc = Joke_Desc;
 
-		TF2_SetPlayerClass(client, BossWeapon);
+		TF2_SetPlayerClass(client, BossClass);
 	}
 	else
 	{
@@ -141,13 +140,18 @@ public Action Joke_Sound(int clients[MAXPLAYERS], int &numClients, char sound[PL
 	float time = GetGameTime();
 	if(delay[client] > time)
 		return Plugin_Stop;
-		
+
 	delay[client] = time+1.0;
+	ReplaceString(sound, PLATFORM_MAX_PATH, "heavy", "civilian", false);
+	if(!FileExists(sound, true))
+		return Plugin_Stop;
+
 	for(int i=1; i<=MaxClients; i++)
 	{
 		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
+		ClientCommand(i, "playgamesound \"%s\"", sound);
 		ClientCommand(i, "playgamesound \"%s\"", sound);
 	}
 	return Plugin_Stop;
@@ -216,7 +220,6 @@ public Action Joke_Think(int client, int &buttons)
 		// do we start the charging now?
 		else if(buttons & CHARGE_BUTTON)
 		{
-			blockAlt = true;
 			Hale[client].JumpChargeFrom = engineTime;
 		}
 	}
