@@ -177,7 +177,7 @@ public void Easter_Info(int client, char[] name, char[] desc, bool setup)
 	}
 	else
 	{
-		strcopy(desc, 512, "Easter Bunny\nBrave Jump: 6 sec cooldown, x1.2 height, x0.8 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\nCandy Eggs: spawns on kill\n \nRage: 2900 damage\nHappy Easter, Fools: Up to 16 seconds\nSentry Stun: 5 seconds\n ");
+		strcopy(desc, 512, "Easter Bunny\nBrave Jump: 6 sec cooldown, x1.2 height, x0.8 distance\nWeighdown: 3 sec cooldown, x6.0 gravity\n \nRage: 2900 damage\nHappy Easter, Fools: 50 eggs\nSentry Stun: 5 seconds\n ");
 	}
 }
 
@@ -688,7 +688,7 @@ public void Easter_Win()
 
 public void Easter_Desc(int client, char[] buffer)
 {
-	strcopy(buffer, 512, "Easter Bunny\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nCandy Eggs: Pick up candy for crits\nHappy Easter, Fools: Call for a medic when rage is ready\n ");
+	strcopy(buffer, 512, "Easter Bunny\n \nBrave Jump: Hold ALT-FIRE, look up, and release ALT-FIRE\nWeighdown: Look down and DUCK\nHappy Easter, Fools: Call for a medic when rage is ready\n ");
 }
 
 public Action Easter_Raging(Handle timer, DataPack data)
