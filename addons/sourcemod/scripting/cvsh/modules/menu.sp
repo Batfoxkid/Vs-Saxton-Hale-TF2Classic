@@ -62,7 +62,7 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Fixed Henchman being silent");
+			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Updated Henchman model\n- Fixed Henchman being silent");
 			page = 14;
 		}
 	}

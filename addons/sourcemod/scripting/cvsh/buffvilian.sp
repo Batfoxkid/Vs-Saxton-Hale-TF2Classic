@@ -1,17 +1,17 @@
 #define BOSS_JOKE 6
 
-static const char BossModel[] = "models/player/buffvilian.mdl";
+static const char BossModel[] = "models/custom/vsh/buffvilian.mdl";
 static const TFClassType BossClass = TFClass_Heavy;
 static const int RageDamage = 2800;
 
 static const char Downloads[][] =
 {
-	"models/player/buffvilian.dx80.vtx",
-	"models/player/buffvilian.dx90.vtx",
-	"models/player/buffvilian.mdl",
-	"models/player/buffvilian.phy",
-	"models/player/buffvilian.sw.vtx",
-	"models/player/buffvilian.vvd"
+	"models/custom/vsh/buffvilian.dx80.vtx",
+	"models/custom/vsh/buffvilian.dx90.vtx",
+	"models/custom/vsh/buffvilian.mdl",
+	"models/custom/vsh/buffvilian.phy",
+	"models/custom/vsh/buffvilian.sw.vtx",
+	"models/custom/vsh/buffvilian.vvd"
 };
 
 void Joke_Precache(Function &func)
