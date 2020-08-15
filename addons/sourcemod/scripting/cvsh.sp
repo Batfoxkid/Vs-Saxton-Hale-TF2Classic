@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"5"
-#define STABLE_REVISION	"0"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -1706,7 +1706,7 @@ public void OnMapStart()
 	#endif
 
 	#if defined BOSS_EASTER
-	Easter_Precache(Special[3]);
+	Easter_Precache(Special[4]);
 	#endif
 
 	#if defined BOSS_JOKE

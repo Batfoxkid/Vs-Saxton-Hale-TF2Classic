@@ -4,7 +4,7 @@ static const char BossModel[] = "models/player/saxton_hale/easter_demo.mdl";
 static const char ProjModel[] = "models/player/saxton_hale/w_easteregg.mdl";
 static const TFClassType BossWeapon = TFClass_DemoMan;
 static const TFClassType BossClass = TFClass_Scout;
-static const int RageDamage = 2900;
+static const int RageDamage = 3400;
 
 static const char Downloads[][] =
 {

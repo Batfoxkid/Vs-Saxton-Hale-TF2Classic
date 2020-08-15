@@ -54,12 +54,16 @@ static void Changelog(int &page, char[] buffer, int length)
 		}
 		case 12:
 		{
-			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman\n-Fixed Snipers not being able to wall climb");
+			strcopy(buffer, length, "Changelog: 1.4.2\n \n\n- Added Henchman\n- Fixed Snipers not being able to wall climb");
+		}
+		case 13:
+		{
+			strcopy(buffer, length, "Changelog: 1.5.0\n \n\n- Added Easter Bunny\n- Removed Headless Horseless Horsemann Jr's random crits");
 		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.5.0\n \n\n- Added Easter Bunny\n-Removed Headless Horseless Horsemann Jr's random crits\n- Fixed Henchman being silent");
-			page = 13;
+			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Fixed Henchman being silent");
+			page = 14;
 		}
 	}
 }
