@@ -165,6 +165,7 @@ public void HHH_Info(int client, char[] name, char[] desc, bool setup)
 public void HHH_RoundStart(int client)
 {
 	TF2_SetPlayerClass(client, BossClass);
+	Hale[client].JumpReadyAt = GetEngineTime()+20.0;
 	HHH_Spawn(client);
 }
 
@@ -526,8 +527,6 @@ public Action HHH_TakeDamage(int client, int &attacker, int &inflictor, float &d
 		damage = 3000.34;
 		damagetype |= DMG_CRIT|DMG_PREVENT_PHYSICS_FORCE;
 
-		PrintHintTextToAll("Headless Horseless Horsemann Jr. got telefragged!");
-		PrintHintText(attacker, "You telefragged Headless Horseless Horsemann Jr!");
 		PrintHintText(client, "You got telefragged by %N!", attacker);
 		return Plugin_Changed;
 	}

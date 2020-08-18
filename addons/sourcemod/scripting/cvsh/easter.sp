@@ -202,7 +202,7 @@ public Action Easter_OnVoice(int client)
 	Hale[client].RageFor = GetEngineTime()+5.0;
 
 	DataPack data;
-	CreateDataTimer(0.075, Easter_Raging, data, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateDataTimer(0.04, Easter_Raging, data, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	data.WriteCell(GetClientUserId(client));
 	data.WriteCell(50);
 

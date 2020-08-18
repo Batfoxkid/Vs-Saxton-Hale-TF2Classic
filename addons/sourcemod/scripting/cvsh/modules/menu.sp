@@ -60,9 +60,13 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.5.0\n \n\n- Added Easter Bunny\n- Removed Headless Horseless Horsemann Jr's random crits");
 		}
+		case 14:
+		{
+			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Updated Henchman model");
+		}
 		default:
 		{
-			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Updated Henchman model\n- Fixed Henchman being silent");
+			strcopy(buffer, length, "Changelog: 1.5.2\n \n\n- Decreased Easter Bunny's rage duration\n- Fixed Horseless Horsemann Jr. not having an initial teleport delay\n- Fixed Henchman being silent");
 			page = 14;
 		}
 	}
