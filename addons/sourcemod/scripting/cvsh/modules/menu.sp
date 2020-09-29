@@ -64,10 +64,18 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.5.1\n \n\n- Increased Easter Bunny's damage to full rage from 2900 to 3400 \n- Updated Henchman model");
 		}
-		default:
+		case 15:
 		{
 			strcopy(buffer, length, "Changelog: 1.5.2\n \n\n- Decreased Easter Bunny's rage duration\n- Fixed Horseless Horsemann Jr. not having an initial teleport delay\n- Fixed Henchman being silent");
-			page = 14;
+		}
+		case 16:
+		{
+			strcopy(buffer, length, "Changelog: 1.6.0\n \n\n- Added Saxtron H413");
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.6.1\n \n\n- Fixed Saxtron H413's rage");
+			page = 17;
 		}
 	}
 }

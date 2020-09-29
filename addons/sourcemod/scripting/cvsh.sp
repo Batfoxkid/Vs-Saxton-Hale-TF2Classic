@@ -11,8 +11,8 @@
 #pragma newdecls required
 
 #define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"5"
-#define STABLE_REVISION	"2"
+#define MINOR_REVISION	"6"
+#define STABLE_REVISION	"1"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -26,7 +26,7 @@ public Plugin myinfo =
 #define FAR_FUTURE	100000000.0
 #define PREFIX		"\x04[VSH]\x01 "
 
-#define MAXBOSSES	6
+#define MAXBOSSES	7
 
 #define CHARGE_BUTTON	IN_ATTACK2
 #define HUD_Y		0.88
@@ -410,12 +410,14 @@ public Action OnJoinTeam(int client, const char[] command, int args)
 		if(Hale[client].Enabled)
 		{
 			ChangeClientTeam(client, Hale[client].Team);
-			return Plugin_Handled;
 		}
-
-		ChangeClientTeam(client, MercTeam);
-		//if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
-			//SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+		else
+		{
+			ChangeClientTeam(client, MercTeam);
+			if(GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") == view_as<int>(TFClass_Unknown))
+				SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", view_as<int>(DEFAULTCLASS));
+		}
+		return Plugin_Handled;
 	}
 	return Plugin_Continue;
 }
@@ -594,6 +596,18 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 
 	SetControlPoint(false);
 	//SetArenaCapEnableTime(0.0);
+
+	if(!FourTeams)
+		CreateTimer(2.0, Timer_ExploitCheck, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Timer_ExploitCheck(Handle timer)
+{
+	for(int i=1; i<=MaxClients; i++)
+	{
+		if(IsClientInGame(i) && !Hale[i].Enabled && GetClientTeam(i)==BossTeam)
+			ChangeClientTeam(i, MercTeam);
+	}
 }
 
 public void OnRoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -1683,6 +1697,7 @@ public void Timer_NoAttacking(int ref)
 #tryinclude "cvsh/hhh.sp"
 #tryinclude "cvsh/easter.sp"
 #tryinclude "cvsh/buffvilian.sp"
+#tryinclude "cvsh/h413.sp"
 
 public void OnMapStart()
 {
@@ -1711,6 +1726,10 @@ public void OnMapStart()
 
 	#if defined BOSS_JOKE
 	Joke_Precache(Special[5]);
+	#endif
+
+	#if defined BOSS_H413
+	H413_Precache(Special[6]);
 	#endif
 }
 
