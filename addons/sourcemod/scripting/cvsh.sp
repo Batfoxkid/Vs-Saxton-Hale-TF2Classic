@@ -12,7 +12,7 @@
 
 #define MAJOR_REVISION	"1"
 #define MINOR_REVISION	"6"
-#define STABLE_REVISION	"1"
+#define STABLE_REVISION	"2"
 #define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
 
 public Plugin myinfo =
@@ -1129,6 +1129,9 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		return action;
 	}
 
+	if(alive && TF2_GetPlayerClass(client)==TFClass_Spy && GetPlayerWeaponSlot(client, TFWeaponSlot_Secondary)==GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon"))
+		SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 330.0);
+
 	if(Client[client].HudAt > engineTime)
 		return Plugin_Continue;
 
@@ -1197,7 +1200,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 		switch(index)
 		{
-			case 0, 1, 2, 5, 6, 7, 8, 32, 37, 3003, 3005, 3008:
+			case 0, 1, 2, 5, 6, 7, 8, 32, 37, 3003, 3004, 3005, 3007, 3008:
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 		}
 	}

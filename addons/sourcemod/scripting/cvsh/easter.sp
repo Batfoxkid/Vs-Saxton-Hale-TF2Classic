@@ -492,6 +492,19 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 					return Plugin_Changed;
 				}
 			}
+			case 3004:	// Tranquilizer
+			{
+				if(Client[client].GlowFor < engineTime)
+				{
+					Client[client].GlowFor = engineTime+9.0;
+				}
+				else if(Client[client].GlowFor != FAR_FUTURE)
+				{
+					Client[client].GlowFor += 7.5;
+					if(Client[client].GlowFor > engineTime+20.0)
+						Client[client].GlowFor = engineTime+20.0;
+				}
+			}
 		}
 	}
 	else if(Hale[client].RageFor > engineTime)
@@ -762,7 +775,7 @@ public Action Easter_Explode(Handle timer, int ref)
 			if(distance > 250)
 				continue;
 
-			SDKHooks_TakeDamage(target, client, client, 95.0-(60.0*(distance/250.0)), DMG_BLAST|DMG_CRIT);
+			SDKHooks_TakeDamage(target, client, client, 95.0-(80.0*(distance/250.0)), DMG_BLAST|DMG_CRIT);
 		}
 	}
 	return Plugin_Continue;

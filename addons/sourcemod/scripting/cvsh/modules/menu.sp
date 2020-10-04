@@ -72,10 +72,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.6.0\n \n\n- Added Saxtron H413");
 		}
-		default:
+		case 17:
 		{
 			strcopy(buffer, length, "Changelog: 1.6.1\n \n\n- Fixed Saxtron H413's rage");
-			page = 17;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.6.2\n \n\n- Increased Saxtron H413's base speed from 280 to 310\n- Increased Easter Bunny's damage falloff\n- The Tranquilizer and Mine Layer are now crit boosted\n- The Tranquilizer now outlines the boss");
+			page = 18;
 		}
 	}
 }

@@ -368,6 +368,19 @@ public Action Default_TakeDamage(int client, int &attacker, int &inflictor, floa
 					return Plugin_Changed;
 				}
 			}
+			case 3004:	// Tranquilizer
+			{
+				if(Client[client].GlowFor < engineTime)
+				{
+					Client[client].GlowFor = engineTime+9.0;
+				}
+				else if(Client[client].GlowFor != FAR_FUTURE)
+				{
+					Client[client].GlowFor += 7.5;
+					if(Client[client].GlowFor > engineTime+20.0)
+						Client[client].GlowFor = engineTime+20.0;
+				}
+			}
 		}
 	}
 	else if(Hale[client].RageFor > engineTime)

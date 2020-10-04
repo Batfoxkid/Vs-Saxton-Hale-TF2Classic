@@ -511,7 +511,7 @@ public Action H413_Think(int client, int &buttons)
 		return Plugin_Continue;
 
 	SetEntityHealth(client, Hale[client].Health);
-	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 280.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
+	SetEntPropFloat(client, Prop_Send, "m_flMaxspeed", 310.0+0.7*(100-Hale[client].Health*100/Hale[client].MaxHealth));
 
 	static float eyeAngles[3];
 	float engineTime = GetEngineTime();
@@ -784,6 +784,19 @@ public Action H413_TakeDamage(int client, int &attacker, int &inflictor, float &
 
 					if(!(damagetype & DMG_CRIT))
 						damage *= 1.5;
+				}
+				case 3004:	// Tranquilizer
+				{
+					if(Client[client].GlowFor < engineTime)
+					{
+						Client[client].GlowFor = engineTime+9.0;
+					}
+					else if(Client[client].GlowFor != FAR_FUTURE)
+					{
+						Client[client].GlowFor += 7.5;
+						if(Client[client].GlowFor > engineTime+20.0)
+							Client[client].GlowFor = engineTime+20.0;
+					}
 				}
 			}
 		}
