@@ -426,7 +426,7 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Pyro\n \n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- Shotgun deals 35%% more damage\n- The Flare Gun deals 100%% more damage\n ");
 
 		case TFClass_DemoMan:
-			menu.SetTitle("Class Changes: Demoman\n \n- The Dynamite Pack always deals critical hits\n ");
+			menu.SetTitle("Class Changes: Demoman\n \n- The Dynamite Pack always deals critical hits\n- The Mine Layer always deals critical hits\n ");
 
 		case TFClass_Heavy:
 			menu.SetTitle("Class Changes: Heavy\n \n- Shotgun deals 35%% more damage\n ");
@@ -441,7 +441,7 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Sniper\n \n- Primary Weapons deals 100%% more damage and outline the boss\n- SMG deals 50%% more damage\n- Fishwhacker deals 10%% more damage against bleeding targets\n ");
 
 		case TFClass_Spy:
-			menu.SetTitle("Class Changes: Spy\n \n- Revolver deals 50%% more damage\n- The Tranquilizer Gun doesn't slow down bosses\n- Knives don't deal critical hits\n- Backstab damage is based on boss's max health\n ");
+			menu.SetTitle("Class Changes: Spy\n \n- Revolver deals 50%% more damage\n- The Tranquilizer Gun doesn't slow down bosses but outlines them\n- Sapper while out increases movement speed\n- Knives don't deal critical hits\n- Backstab damage is based on boss's max health\n ");
 
 		case TFClass_Civilian:
 			menu.SetTitle("Class Changes: Civilian\n \n- 80%% less damage from fall damage\n ");
