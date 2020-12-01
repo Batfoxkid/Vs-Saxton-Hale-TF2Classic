@@ -1699,8 +1699,8 @@ public void Timer_NoAttacking(int ref)
 #tryinclude "cvsh/cbs.sp"
 #tryinclude "cvsh/hhh.sp"
 #tryinclude "cvsh/easter.sp"
-#tryinclude "cvsh/buffvilian.sp"
-#tryinclude "cvsh/h413.sp"
+//#tryinclude "cvsh/buffvilian.sp"
+//#tryinclude "cvsh/h413.sp"
 
 public void OnMapStart()
 {
