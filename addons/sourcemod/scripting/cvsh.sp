@@ -1006,7 +1006,7 @@ public Action TF2_OnPlayerTeleport(int client, int entity, bool &result)
 	return Plugin_Changed;
 }
 
-public Action TF2_CalcIsAttackCritical(int client, int weapon, const char[] classname, bool &result)
+public Action TF2_CalcIsAttackCritical(int client, int weapon, char[] classname, bool &result)
 {
 	if(!Enabled || RoundMode!=1)
 		return Plugin_Continue;
