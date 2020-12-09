@@ -76,10 +76,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.6.1\n \n\n- Fixed Saxtron H413's rage\n- Increased Saxtron H413's base speed from 280 to 310");
 		}
-		default:
+		case 18:
 		{
 			strcopy(buffer, length, "Changelog: 1.6.2\n \n\n- Increased Easter Bunny's damage falloff\n- Holding the Sapper gives increased base speed\n- The Tranquilizer and Mine Layer are now crit boosted\n- The Tranquilizer now outlines the boss");
-			page = 18;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.6.3\n \n\n- Now publicly available for servers\n- Fixed Saxton Hale's building destory sound");
+			page = 19;
 		}
 	}
 }
@@ -180,7 +184,6 @@ static void Menu_Main(int client)
 	menu.AddItem("3", "Queue Points");
 	menu.AddItem("4", "Class Changes");
 	menu.AddItem("5", "Changelog");
-	menu.AddItem("6", "DISC-FF.com");
 
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -211,9 +214,6 @@ public int Menu_MainH(Menu menu, MenuAction action, int client, int selection)
 
 				case 5:
 					Menu_Changelog(client, true);
-
-				default:
-					ClientCommand(client, "sm_helpme");
 			}
 		}
 	}
@@ -447,7 +447,7 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Civilian\n \n- 80%% less damage from fall damage\n ");
 
 		default:
-			menu.SetTitle("Class Changes: Mercenary\n \n- The Super Shotgun has 50%% more knockback\n- Flamethrower deals 100%% more damage- Airblast causes the boss to gain rage\n- Pistols deals 50%% more damage\n- This is not an easter egg\n ");
+			menu.SetTitle("Class Changes: Mercenary\n \n- The Super Shotgun has 50%% more knockback\n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- Pistols deals 50%% more damage\n- This is not an easter egg\n ");
 	}
 
 	if(backMode)

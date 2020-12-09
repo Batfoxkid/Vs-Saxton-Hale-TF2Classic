@@ -527,7 +527,7 @@ public Action Hale_Death(int client, int attacker, char[] logname, char[] iconna
 
 public void Hale_Destory(int client)
 {
-	/*if(GetRandomInt(0, 2))
+	if(GetRandomInt(0, 2))
 		return;
 
 	for(int i=1; i<=MaxClients; i++)
@@ -535,9 +535,9 @@ public void Hale_Destory(int client)
 		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
-		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-		EmitSoundToAll(HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-	}*/
+		EmitSoundToClient(i, HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+		EmitSoundToClient(i, HALEKILLBUILD, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+	}
 }
 
 public Action Hale_Think(int client, int &buttons)

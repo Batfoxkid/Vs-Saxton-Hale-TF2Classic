@@ -10,32 +10,31 @@
 #include <tf2c>
 #pragma newdecls required
 
-#define MAJOR_REVISION	"1"
-#define MINOR_REVISION	"6"
-#define STABLE_REVISION	"2"
-#define PLUGIN_VERSION	MAJOR_REVISION..."."...MINOR_REVISION..."."...STABLE_REVISION
+#define PLUGIN_VERSION	"1.6.3"
+#define PLUGIN_REVISION	"manual"
 
 public Plugin myinfo =
 {
 	name		=	"Versus Saxton Hale",
 	author		=	"Batfoxkid",
 	description	=	"VSH for Team Fortress 2 Classic",
-	version		=	PLUGIN_VERSION
+	version		=	PLUGIN_VERSION..."."...PLUGIN_REVISION,
+	url		=	"github.com/Batfoxkid/Vs-Saxton-Hale-TF2Classic"
 };
 
 #define FAR_FUTURE	100000000.0
 #define PREFIX		"\x04[VSH]\x01 "
 
-#define MAXBOSSES	7
+#define MAXBOSSES	16
 
 #define CHARGE_BUTTON	IN_ATTACK2
 #define HUD_Y		0.88
 #define HUD_INTERVAL	0.2
-#define HUD_LINGER	0.01
+#define HUD_LINGER	0.05
 #define HUD_ALPHA	192
-#define HUD_R_OK	255
-#define HUD_G_OK	255
-#define HUD_B_OK	255
+#define HUD_R_OK		255
+#define HUD_G_OK		255
+#define HUD_B_OK		255
 #define HUD_R_ERROR	255
 #define HUD_G_ERROR 	64
 #define HUD_B_ERROR	64
@@ -210,19 +209,20 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
-	FourTeams = false;
-
-	/*int i;
-	while((i=FindEntityByClassname(i, "tf_gamerules")) != -1)
-	{
-		FourTeams = view_as<bool>(GetEntProp(i, Prop_Send, "m_bFourTeamMode"));
-		break;
-	}*/
-
 	SetConVarBool(FindConVar("tf_arena_use_queue"), false);
 	SetConVarBool(FindConVar("tf_arena_first_blood"), false);
 	SetConVarBool(FindConVar("mp_forcecamera"), false);
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
+
+	int entity = FindEntityByClassname(-1, "tf_gamerules");
+	if(entity > MaxClients)
+	{
+		FourTeams = view_as<bool>(GetEntProp(entity, Prop_Send, "m_bFourTeamMode"));
+	}
+	else
+	{
+		FourTeams = false;
+	}
 
 	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
 	SetConVarBool(FindConVar("tf_damage_disablespread"), !FourTeams);
@@ -573,7 +573,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	if(FourTeams)
 	{
 		int health = 2600+(clients*25);
-		for(int i; i<MAXPLAYERS; i++)
+		for(int i; i<=MAXPLAYERS; i++)
 		{
 			Hale[i].Health = health;
 			Hale[i].MaxHealth = health;
@@ -1183,13 +1183,13 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		if(AlivePlayers == 1)
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER+0.05);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 			return Plugin_Continue;
 		}
 
 		if(TF2_IsPlayerInCondition(client, TFCond_Ubercharged))
 		{
-			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER+0.05);
+			TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 			return Plugin_Continue;
 		}
 

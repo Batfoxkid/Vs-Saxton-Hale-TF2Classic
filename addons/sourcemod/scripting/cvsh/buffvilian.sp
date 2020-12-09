@@ -143,7 +143,7 @@ public Action Joke_Sound(int clients[MAXPLAYERS], int &numClients, char sound[PL
 
 	delay[client] = time+1.0;
 	ReplaceString(sound, PLATFORM_MAX_PATH, "heavy", "civilian", false);
-	if(!FileExists(sound))
+	if(!FileExists(sound, true))
 		return Plugin_Stop;
 
 	for(int i=1; i<=MaxClients; i++)

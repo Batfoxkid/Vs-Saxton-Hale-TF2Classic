@@ -492,7 +492,7 @@ public Action H413_Death(int client, int attacker, char[] logname, char[] iconna
 
 public void H413_Destory(int client)
 {
-	/*if(GetRandomInt(0, 2))
+	if(GetRandomInt(0, 2))
 		return;
 
 	for(int i=1; i<=MaxClients; i++)
@@ -500,9 +500,9 @@ public void H413_Destory(int client)
 		if(!IsClientInGame(i) || Client[i].NoVoice)
 			continue;
 
-		EmitSoundToAll(SoundKillBuild, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-		EmitSoundToAll(SoundKillBuild, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
-	}*/
+		EmitSoundToClient(i, SoundKillBuild, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+		EmitSoundToClient(i, SoundKillBuild, client, _, SNDLEVEL_TRAFFIC, SND_NOFLAGS, SNDVOL_NORMAL, 100, client, _, NULL_VECTOR, true, 0.0);
+	}
 }
 
 public Action H413_Think(int client, int &buttons)
