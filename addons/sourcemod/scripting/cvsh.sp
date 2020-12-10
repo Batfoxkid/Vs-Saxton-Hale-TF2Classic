@@ -214,6 +214,9 @@ public void OnConfigsExecuted()
 	SetConVarBool(FindConVar("mp_forcecamera"), false);
 	SetConVarString(FindConVar("mp_humans_must_join_team"), "any");
 
+	SetConVarInt(FindConVar("tf2c_randomizer"), 4);
+	SetConVarString(FindConVar("tf2c_randomizer_script"), "cfg/randomizer_vsh.cfg");
+
 	int entity = FindEntityByClassname(-1, "tf_gamerules");
 	if(entity > MaxClients)
 	{
