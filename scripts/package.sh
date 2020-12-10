@@ -7,7 +7,7 @@ mkdir -p package/addons/sourcemod/plugins
 
 # Copy all required stuffs to package
 cp -r addons/sourcemod/plugins/cvsh.smx package/addons/sourcemod/plugins
-cp -r cfg/randomizer_vsh.cfg package/cfg
+cp -r ../cfg/randomizer_vsh.cfg package/cfg
 cp -r ../models package
 cp -r ../materials package
 cp -r ../sound package
