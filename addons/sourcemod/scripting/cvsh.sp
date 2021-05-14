@@ -145,6 +145,7 @@ Function Special[MAXBOSSES];	// void(int client, char[] name, char[] desc, Funct
 
 Cookie Cookies;
 
+ConVar CvarFourTeam;
 ConVar CvarSpec;
 ConVar CvarBonus;
 //ConVar CvarCheats;
@@ -192,6 +193,7 @@ public void OnPluginStart()
 	Enabled = false;
 	RoundMode = -1;
 
+	CvarFourTeam = CreateConVar("vsh_fourteam", "1", "If to enable Four Team mode on Four-Team maps", _, true, 0.0, true, 1.0);
 	CvarSpec = FindConVar("mp_allowspectators");
 	CvarBonus = FindConVar("mp_bonusroundtime");
 	//CvarCheats = FindConVar("sv_cheats");
@@ -217,14 +219,12 @@ public void OnConfigsExecuted()
 	SetConVarInt(FindConVar("tf2c_randomizer"), 4);
 	SetConVarString(FindConVar("tf2c_randomizer_script"), "cfg/randomizer_vsh.cfg");
 
-	int entity = FindEntityByClassname(-1, "tf_gamerules");
-	if(entity > MaxClients)
+	FourTeams = false;
+	if(CvarFourTeam.BoolValue)
 	{
-		FourTeams = view_as<bool>(GetEntProp(entity, Prop_Send, "m_bFourTeamMode"));
-	}
-	else
-	{
-		FourTeams = false;
+		int entity = FindEntityByClassname(-1, "tf_gamerules");
+		if(entity > MaxClients)
+			FourTeams = view_as<bool>(GetEntProp(entity, Prop_Send, "m_bFourTeamMode"));
 	}
 
 	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
