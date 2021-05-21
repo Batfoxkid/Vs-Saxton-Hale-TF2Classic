@@ -268,7 +268,8 @@ public Action CBS_DealDamage(int client, int victim, int &inflictor, float &dama
 	}
 	else
 	{
-		damage *= TF2_IsPlayerInCondition(victim, TFCond_Kritzkrieged) ? 1.54 : 4.62;
+		damage *= 1.5;
+		damagetype |= DMG_CRIT;
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;

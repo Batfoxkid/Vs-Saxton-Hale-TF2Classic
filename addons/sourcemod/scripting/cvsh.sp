@@ -7,7 +7,7 @@
 #include <clientprefs>
 #include <sdkhooks>
 #include <sdktools>
-#include <tf2c>
+//#tryinclude <tf2c>
 #pragma newdecls required
 
 #define PLUGIN_VERSION	"1.6.4"
@@ -21,6 +21,58 @@ public Plugin myinfo =
 	version		=	PLUGIN_VERSION..."."...PLUGIN_REVISION,
 	url		=	"github.com/Batfoxkid/Vs-Saxton-Hale-TF2Classic"
 };
+
+#if !defined _tf2c_included
+enum TFClassType
+{
+	TFClass_Unknown = 0,
+	TFClass_Scout,
+	TFClass_Sniper,
+	TFClass_Soldier,
+	TFClass_DemoMan,
+	TFClass_Medic,
+	TFClass_Heavy,
+	TFClass_Pyro,
+	TFClass_Spy,
+	TFClass_Engineer,
+	TFClass_Civilian
+};
+
+enum TFTeam
+{
+	TFTeam_Unassigned = 0,
+	TFTeam_Spectator,
+	TFTeam_Red,
+	TFTeam_Blue,
+	TFTeam_Green,
+	TFTeam_Yellow
+};
+
+enum TFCond
+{
+	TFCond_Ubercharged = 5,
+	TFCond_Taunting = 7,
+	TFCond_Kritzkrieged = 11,
+	TFCond_HalloweenCritCandy = 33,
+	TFCond_CritCanteen = 34,
+	TFCond_RestrictToMelee = 41
+};
+
+enum
+{
+	TFWeaponSlot_Primary = 0,
+	TFWeaponSlot_Secondary,
+	TFWeaponSlot_Melee,
+	TFWeaponSlot_Grenade,
+	TFWeaponSlot_Building,
+	TFWeaponSlot_PDA,
+	TFWeaponSlot_Item1,
+	TFWeaponSlot_Item2
+};
+
+#define TF_CUSTOM_BACKSTAB	2
+#define TFCondDuration_Infinite	0.0
+#endif
 
 #define FAR_FUTURE	100000000.0
 #define PREFIX		"\x04[VSH]\x01 "
@@ -195,7 +247,7 @@ public void OnPluginStart()
 	Enabled = false;
 	RoundMode = -1;
 
-	CvarFourTeam = CreateConVar("vsh_fourteam", "1", "If to enable Four Team mode on Four-Team maps", _, true, 0.0, true, 1.0);
+	CvarFourTeam = CreateConVar("vsh_fourteam", "0", "If to enable Four Team mode on Four-Team maps", _, true, 0.0, true, 1.0);
 	CvarHealthMulti = CreateConVar("vsh_healthmulti", "1.0", "Health multiplyer for bosses", _, true, 0.001);
 	CvarWeighdown = CreateConVar("vsh_weighdown", "0", "If to use Instant Weighdown variant instead of Dynamic Weighdown", _, true, 0.0, true, 1.0);
 	CvarSpec = FindConVar("mp_allowspectators");
@@ -223,12 +275,13 @@ public void OnConfigsExecuted()
 	SetConVarInt(FindConVar("tf2c_randomizer"), 4);
 	SetConVarString(FindConVar("tf2c_randomizer_script"), "cfg/randomizer_vsh.cfg");
 
-	FourTeams = false;
 	if(CvarFourTeam.BoolValue)
 	{
-		int entity = FindEntityByClassname(-1, "tf_gamerules");
-		if(entity > MaxClients)
-			FourTeams = view_as<bool>(GetEntProp(entity, Prop_Send, "m_bFourTeamMode"));
+		FourTeams = view_as<bool>(GameRules_GetProp("m_bFourTeamMode"));
+	}
+	else
+	{
+		FourTeams = false;
 	}
 
 	SetConVarBool(FindConVar("mp_autoteambalance"), FourTeams);
@@ -1696,18 +1749,172 @@ public void Timer_NoAttacking(int ref)
 	SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", next);
 }
 
+#if !defined _tf2c_included
+stock void TF2_SetPlayerClass(int client, TFClassType classType, bool weapons=true, bool persistent=true)
+{
+	SetEntProp(client, Prop_Send, "m_iClass", classType);
+
+	if (persistent)
+	{
+		SetEntProp(client, Prop_Send, "m_iDesiredPlayerClass", classType);
+	}
+}
+
+stock TFClassType TF2_GetPlayerClass(int client)
+{
+	return view_as<TFClassType>(GetEntProp(client, Prop_Send, "m_iClass"));
+}
+
+stock void TF2_RemoveWeaponSlot(int client, int slot)
+{
+	int weaponIndex;
+	while ((weaponIndex = GetPlayerWeaponSlot(client, slot)) != -1)
+	{
+		int extraWearable = GetEntPropEnt(weaponIndex, Prop_Send, "m_hExtraWearable");
+		if (extraWearable != -1)
+		{
+			RemoveEntity(extraWearable);
+		}
+
+		RemovePlayerItem(client, weaponIndex);
+		AcceptEntityInput(weaponIndex, "Kill");
+	}
+}
+
+stock bool TF2_IsPlayerInCondition(int client, TFCond cond)
+{
+	// Conditions are stored across multiple netprops now, one for each 32-bit segment.
+	int iCond = view_as<int>(cond);
+	switch (iCond / 32)
+	{
+		case 0:
+		{
+			int bit = 1 << iCond;
+			if ((GetEntProp(client, Prop_Send, "m_nPlayerCond") & bit) == bit)
+			{
+				return true;
+			}
+
+			if ((GetEntProp(client, Prop_Send, "_condition_bits") & bit) == bit)
+			{
+				return true;
+			}
+		}
+		case 1:
+		{
+			int bit = (1 << (iCond - 32));
+			if ((GetEntProp(client, Prop_Send, "m_nPlayerCondEx") & bit) == bit)
+			{
+				return true;
+			}
+		}
+		case 2:
+		{
+			int bit = (1 << (iCond - 64));
+			if ((GetEntProp(client, Prop_Send, "m_nPlayerCondEx2") & bit) == bit)
+			{
+				return true;
+			}
+		}
+		case 3:
+		{
+			int bit = (1 << (iCond - 96));
+			if ((GetEntProp(client, Prop_Send, "m_nPlayerCondEx3") & bit) == bit)
+			{
+				return true;
+			}
+		}
+		default:
+		{
+			ThrowError("Invalid TFCond value %d", iCond);
+		}
+	}
+
+	return false;
+}
+
+stock void TF2_AddCondition(int client, TFCond cond, float duration=TFCondDuration_Infinite, int inflictor=0)
+{
+	int iCond = view_as<int>(cond);
+	switch (iCond / 32)
+	{
+		case 0:
+		{
+			int bit = 1 << iCond;
+			SetEntProp(client, Prop_Send, "m_nPlayerCond", GetEntProp(client, Prop_Send, "m_nPlayerCond")|bit);
+			SetEntProp(client, Prop_Send, "m_nPlayerCond", GetEntProp(client, Prop_Send, "m_nPlayerCond")|bit);
+		}
+		case 1:
+		{
+			int bit = (1 << (iCond - 32));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx", GetEntProp(client, Prop_Send, "m_nPlayerCondEx")|bit);
+		}
+		case 2:
+		{
+			int bit = (1 << (iCond - 64));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx2", GetEntProp(client, Prop_Send, "m_nPlayerCondEx2")|bit);
+		}
+		case 3:
+		{
+			int bit = (1 << (iCond - 96));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx3", GetEntProp(client, Prop_Send, "m_nPlayerCondEx3")|bit);
+		}
+		default:
+		{
+			ThrowError("Invalid TFCond value %d", iCond);
+		}
+	}
+}
+
+stock void TF2_RemoveCondition(int client, TFCond cond)
+{
+	int iCond = view_as<int>(cond);
+	switch (iCond / 32)
+	{
+		case 0:
+		{
+			int bit = 1 << iCond;
+			SetEntProp(client, Prop_Send, "m_nPlayerCond", GetEntProp(client, Prop_Send, "m_nPlayerCond") & ~bit);
+			SetEntProp(client, Prop_Send, "m_nPlayerCond", GetEntProp(client, Prop_Send, "m_nPlayerCond") & ~bit);
+		}
+		case 1:
+		{
+			int bit = (1 << (iCond - 32));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx", GetEntProp(client, Prop_Send, "m_nPlayerCondEx") & ~bit);
+		}
+		case 2:
+		{
+			int bit = (1 << (iCond - 64));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx2", GetEntProp(client, Prop_Send, "m_nPlayerCondEx2") & ~bit);
+		}
+		case 3:
+		{
+			int bit = (1 << (iCond - 96));
+			SetEntProp(client, Prop_Send, "m_nPlayerCondEx3", GetEntProp(client, Prop_Send, "m_nPlayerCondEx3") & ~bit);
+		}
+		default:
+		{
+			ThrowError("Invalid TFCond value %d", iCond);
+		}
+	}
+}
+#endif
+
 /*
 	Setup Hale Files Here
 */
 
 #include "cvsh/default.sp"
 #include "cvsh/hale.sp"
+//#tryinclude "cvsh/buffvilian.sp"
+
+#if defined _tf2c_included
 #tryinclude "cvsh/vagineer.sp"
 #tryinclude "cvsh/cbs.sp"
 #tryinclude "cvsh/hhh.sp"
 #tryinclude "cvsh/easter.sp"
-//#tryinclude "cvsh/buffvilian.sp"
 //#tryinclude "cvsh/h413.sp"
+#endif
 
 public void OnMapStart()
 {
