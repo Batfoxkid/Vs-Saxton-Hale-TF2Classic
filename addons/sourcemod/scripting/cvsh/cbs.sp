@@ -302,7 +302,8 @@ public Action CBS_Think(int client, int &buttons)
 					// unlike the original, I'm managing cooldown myself. so lets do it.
 					// also doing it now to completely avoid that rare double SJ glitch I've seen
 					Hale[client].JumpReadyAt = engineTime+5.0;
-					Hale[client].WeighReadyAt = engineTime+3.0;
+					if(!CvarWeighdown.BoolValue)
+						Hale[client].WeighReadyAt = engineTime+3.0;
 
 					// taken from default_abilities, modified only lightly
 					static float position[3], velocity[3];

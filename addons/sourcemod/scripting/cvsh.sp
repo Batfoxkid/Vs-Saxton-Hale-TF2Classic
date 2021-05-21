@@ -10,7 +10,7 @@
 #include <tf2c>
 #pragma newdecls required
 
-#define PLUGIN_VERSION	"1.6.3"
+#define PLUGIN_VERSION	"1.6.4"
 #define PLUGIN_REVISION	"manual"
 
 public Plugin myinfo =
@@ -146,6 +146,8 @@ Function Special[MAXBOSSES];	// void(int client, char[] name, char[] desc, Funct
 Cookie Cookies;
 
 ConVar CvarFourTeam;
+ConVar CvarHealthMulti;
+ConVar CvarWeighdown;
 ConVar CvarSpec;
 ConVar CvarBonus;
 //ConVar CvarCheats;
@@ -194,6 +196,8 @@ public void OnPluginStart()
 	RoundMode = -1;
 
 	CvarFourTeam = CreateConVar("vsh_fourteam", "1", "If to enable Four Team mode on Four-Team maps", _, true, 0.0, true, 1.0);
+	CvarHealthMulti = CreateConVar("vsh_healthmulti", "1.0", "Health multiplyer for bosses", _, true, 0.001);
+	CvarWeighdown = CreateConVar("vsh_weighdown", "0", "If to use Instant Weighdown variant instead of Dynamic Weighdown", _, true, 0.0, true, 1.0);
 	CvarSpec = FindConVar("mp_allowspectators");
 	CvarBonus = FindConVar("mp_bonusroundtime");
 	//CvarCheats = FindConVar("sv_cheats");
@@ -575,7 +579,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 
 	if(FourTeams)
 	{
-		int health = 2600+(clients*25);
+		int health = RoundFloat((2600+(clients*25)) * CvarHealthMulti.FloatValue);
 		for(int i; i<=MAXPLAYERS; i++)
 		{
 			Hale[i].Health = health;
@@ -584,7 +588,7 @@ public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 	}
 	else if(IsClientInGame(LeaderHale))
 	{
-		Hale[LeaderHale].Health = RoundFloat((Pow((758.8+clients)*(clients-1), 1.0341)+1046.0));
+		Hale[LeaderHale].Health = RoundFloat((Pow((758.8+clients)*(clients-1), 1.0341)+1046.0) * CvarHealthMulti.FloatValue);
 		Hale[LeaderHale].MaxHealth = Hale[LeaderHale].Health;
 
 		SetHudTextParams(-1.0, 0.2, 10.0, 255, 255, 255, 255);
