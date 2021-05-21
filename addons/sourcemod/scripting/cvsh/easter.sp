@@ -389,7 +389,7 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 		switch(index)
 		{
-			case 0, 1, 2, 5, 6, 7, 8, 32, 34, 42, 43, 44, 47:	// Crit-Boosted Weapons
+			case 0, 1, 2, 5, 6, 7, 8, 32, 34, 42, 44, 47:	// Crit-Boosted Weapons
 			{
 				if(damage > 5)
 				{
