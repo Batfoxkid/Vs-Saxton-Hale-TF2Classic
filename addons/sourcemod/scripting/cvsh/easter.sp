@@ -389,12 +389,15 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 		int index = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
 		switch(index)
 		{
-			case 0, 1, 2, 3, 5, 6, 7, 8, 32, 37, 3003, 3005, 3008:	// Melee weapons
+			case 0, 1, 2, 5, 6, 7, 8, 32, 34, 42, 43, 44, 47:	// Crit-Boosted Weapons
 			{
-				damagetype |= DMG_CRIT;
-				return Plugin_Changed;
+				if(damage > 5)
+				{
+					damagetype |= DMG_CRIT;
+					return Plugin_Changed;
+				}
 			}
-			case 9, 10, 11, 12, 3001:	// Shotguns, R.P.G
+			case 9, 10, 11, 12, 40:	// Shotguns, R.P.G
 			{
 				if(!(damagetype & DMG_CRIT))
 				{
@@ -457,7 +460,7 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 					return Plugin_Changed;
 				}
 			}
-			case 39:	// Flaregun
+			case 35:	// Flaregun
 			{
 				if(damage > 5)
 				{
@@ -465,7 +468,7 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 					return Plugin_Changed;
 				}
 			}
-			case 56:	// Huntsman
+			case 37, 46:	// Huntsman, Mine Layer
 			{
 				if(!(damagetype & DMG_CRIT))
 				{
@@ -473,7 +476,7 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 					return Plugin_Changed;
 				}
 			}
-			case 3002:	// Hunting Revolver
+			case 41:	// Hunting Revolver
 			{
 				if(Client[client].GlowFor < engineTime)
 				{
@@ -492,7 +495,7 @@ public Action Easter_TakeDamage(int client, int &attacker, int &inflictor, float
 					return Plugin_Changed;
 				}
 			}
-			case 3004:	// Tranquilizer
+			case 43:	// Tranquilizer
 			{
 				if(Client[client].GlowFor < engineTime)
 				{

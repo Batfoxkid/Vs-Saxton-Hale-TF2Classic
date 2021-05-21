@@ -80,10 +80,14 @@ static void Changelog(int &page, char[] buffer, int length)
 		{
 			strcopy(buffer, length, "Changelog: 1.6.2\n \n\n- Increased Easter Bunny's damage falloff\n- Holding the Sapper gives increased base speed\n- The Tranquilizer and Mine Layer are now crit boosted\n- The Tranquilizer now outlines the boss");
 		}
-		default:
+		case 19:
 		{
 			strcopy(buffer, length, "Changelog: 1.6.3\n \n\n- Now publicly available for servers\n- Fixed Saxton Hale's building destory sound");
-			page = 19;
+		}
+		default:
+		{
+			strcopy(buffer, length, "Changelog: 1.6.4\n \n\n- Reduced Flaregun's damage bonus from +100%% to +50%%\n- Reduced Mine Layer's damage bonus from +200%% to +100%%\n- Gave Coil Gun +50%% damage bonus\n- The Fishwhacker's bleeding no longer deals critical hits.");
+			page = 20;
 		}
 	}
 }
@@ -423,7 +427,7 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Soldier\n \n- The R.P.G. deals 35%% more damage\n- Shotgun deals 35%% more damage\n- The Gunboats reduces fall damage by 80%%\n ");
 
 		case TFClass_Pyro:
-			menu.SetTitle("Class Changes: Pyro\n \n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- Shotgun deals 35%% more damage\n- The Flare Gun deals 100%% more damage\n ");
+			menu.SetTitle("Class Changes: Pyro\n \n- Flamethrower deals 100%% more damage\n- Airblast causes the boss to gain rage\n- Shotgun deals 35%% more damage\n- The Flare Gun deals 50%% more damage\n ");
 
 		case TFClass_DemoMan:
 			menu.SetTitle("Class Changes: Demoman\n \n- The Dynamite Pack always deals critical hits\n- The Mine Layer always deals critical hits\n ");
@@ -432,13 +436,13 @@ void Menu_InfoClass(int client, int class, int backMode=0)
 			menu.SetTitle("Class Changes: Heavy\n \n- Shotgun deals 35%% more damage\n ");
 
 		case TFClass_Engineer:
-			menu.SetTitle("Class Changes: Engineer\n \n- Shotgun deals 35%% more damage\n- Sentries explode upon your death\n ");
+			menu.SetTitle("Class Changes: Engineer\n \n- Shotgun deals 35%% more damage\n- Pistols deals 50%% more damage\n- Sentries explode upon your death\n ");
 
 		case TFClass_Medic:
 			menu.SetTitle("Class Changes: Medic\n \n- Syringe Gun deals 35%% more damage and gains 2%% Ubercharge on hit\n- Medi Gun's Ubercharge gives critical hits\n- The Kritzkrieg's Ubercharge gives 67%% damage resistance\n ");
 
 		case TFClass_Sniper:
-			menu.SetTitle("Class Changes: Sniper\n \n- Primary Weapons deals 100%% more damage and outline the boss\n- SMG deals 50%% more damage\n- Fishwhacker deals 10%% more damage against bleeding targets\n ");
+			menu.SetTitle("Class Changes: Sniper\n \n- Sniper Rifles deals 50%% more damage and outline the boss\n- The Huntsman deals 100%% more damage\n- SMG deals 50%% more damage\n ");
 
 		case TFClass_Spy:
 			menu.SetTitle("Class Changes: Spy\n \n- Revolver deals 50%% more damage\n- The Tranquilizer Gun doesn't slow down bosses but outlines them\n- Sapper while out increases movement speed\n- Knives don't deal critical hits\n- Backstab damage is based on boss's max health\n ");

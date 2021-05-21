@@ -1207,7 +1207,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 
 		switch(index)
 		{
-			case 0, 1, 2, 5, 6, 7, 8, 32, 37, 3003, 3004, 3005, 3007, 3008:
+			case 0, 1, 2, 5, 6, 7, 8, 32, 34, 42, 43, 44, 47:
 				TF2_AddCondition(client, TFCond_HalloweenCritCandy, HUD_INTERVAL+HUD_LINGER);
 		}
 	}
